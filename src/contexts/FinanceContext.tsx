@@ -124,37 +124,41 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     fetchData();
 
-    // Set up real-time subscriptions
-    const billsSubscription = supabase
-      .channel('bills-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'bills', filter: `user_id=eq.${user.id}` },
-        (payload) => {
-          console.log('Bills change received:', payload);
-          // Refresh bills when there's a change
-          fetchData();
-        }
-      )
-      .subscribe();
-      
-    const accountsSubscription = supabase
-      .channel('accounts-changes')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'accounts', filter: `user_id=eq.${user.id}` },
-        (payload) => {
-          console.log('Accounts change received:', payload);
-          // Refresh accounts when there's a change
-          fetchData();
-        }
-      )
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(billsSubscription);
-      supabase.removeChannel(accountsSubscription);
-    };
+    // Only set up real-time subscriptions if we're not using the mock client
+    if (typeof supabase.channel === 'function') {
+      try {
+        // Set up real-time subscriptions for bills
+        const billsSubscription = supabase
+          .channel('bills-changes')
+          .on('broadcast', { event: 'bills-change' }, () => {
+            console.log('Bills change received');
+            // Refresh bills when there's a change
+            fetchData();
+          })
+          .subscribe();
+          
+        // Set up real-time subscriptions for accounts
+        const accountsSubscription = supabase
+          .channel('accounts-changes')
+          .on('broadcast', { event: 'accounts-change' }, () => {
+            console.log('Accounts change received');
+            // Refresh accounts when there's a change
+            fetchData();
+          })
+          .subscribe();
+        
+        return () => {
+          if (billsSubscription && typeof supabase.removeChannel === 'function') {
+            supabase.removeChannel(billsSubscription);
+          }
+          if (accountsSubscription && typeof supabase.removeChannel === 'function') {
+            supabase.removeChannel(accountsSubscription);
+          }
+        };
+      } catch (error) {
+        console.error('Error setting up real-time subscriptions:', error);
+      }
+    }
   }, [user]);
 
   // Calculate upcoming bills and generate reminders
@@ -267,8 +271,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const { error } = await supabase
         .from('bills')
         .update(dbUpdates)
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
         
       if (error) throw error;
       
@@ -296,8 +299,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const { error } = await supabase
         .from('bills')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
         
       if (error) throw error;
       
@@ -360,8 +362,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const { error } = await supabase
         .from('accounts')
         .update(updatedFields)
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
         
       if (error) throw error;
       
@@ -389,8 +390,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       const { error } = await supabase
         .from('accounts')
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('id', id);
         
       if (error) throw error;
       

@@ -95,14 +95,15 @@ const CalendarView = () => {
                       today: { fontWeight: 'bold' },
                     }}
                     components={{
-                      DayContent: ({ date, ...props }) => {
+                      DayContent: (props) => {
                         // Check if any bills are due on this date
-                        const dateString = format(date, 'yyyy-MM-dd');
+                        const dateObj = props.date;
+                        const dateString = format(dateObj, 'yyyy-MM-dd');
                         const dueToday = bills.some(bill => bill.dueDate === dateString);
                         
                         return (
                           <div className="relative w-full h-full flex items-center justify-center">
-                            {props.children}
+                            <div>{props.date.getDate()}</div>
                             {dueToday && (
                               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 h-1.5 w-1.5 bg-primary rounded-full" />
                             )}
@@ -160,7 +161,7 @@ const CalendarView = () => {
                             </div>
                             <div className="text-right">
                               <p className="font-semibold">${bill.amount.toFixed(2)}</p>
-                              <Badge variant={bill.paid ? "success" : "outline"} className="mt-1">
+                              <Badge variant={bill.paid ? "secondary" : "outline"} className="mt-1">
                                 {bill.paid ? 'Paid' : 'Unpaid'}
                               </Badge>
                             </div>

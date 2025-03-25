@@ -30,36 +30,38 @@ export const supabase = supabaseUrl && supabaseAnonKey
         signOut: async () => ({ error: null }),
         resetPasswordForEmail: async () => ({ error: null }),
       },
-      from: () => ({
-        select: () => ({
-          eq: () => ({
+      from: (table: string) => ({
+        select: (columns: string) => ({
+          eq: (column: string, value: any) => ({
             data: [],
             error: null
           })
         }),
-        insert: () => ({
+        insert: (values: any[]) => ({
           select: () => ({
             data: null,
             error: null
           })
         }),
-        update: () => ({
-          eq: () => ({
+        update: (values: any) => ({
+          eq: (column: string, value: any) => ({
+            data: null,
             error: null
           })
         }),
         delete: () => ({
-          eq: () => ({
+          eq: (column: string, value: any) => ({
+            data: null,
             error: null
           })
         })
       }),
-      channel: () => ({
-        on: () => ({
+      channel: (name: string) => ({
+        on: (type: string, filter: any, callback: () => void) => ({
           subscribe: () => {}
         })
       }),
-      removeChannel: () => {}
+      removeChannel: (channel: any) => {}
     };
 
 // Database types
