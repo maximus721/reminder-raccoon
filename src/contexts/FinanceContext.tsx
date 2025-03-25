@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -127,8 +126,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // Only set up real-time subscriptions if we're not using the mock client
     if (typeof supabase.channel === 'function') {
       try {
-        // Set up real-time subscriptions for bills
-        const billsSubscription = supabase
+        // Set up a channel for real-time updates
+        const billsChannel = supabase
           .channel('bills-changes')
           .on('broadcast', { event: 'bills-change' }, () => {
             console.log('Bills change received');
@@ -137,8 +136,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           })
           .subscribe();
           
-        // Set up real-time subscriptions for accounts
-        const accountsSubscription = supabase
+        // Set up a channel for real-time updates
+        const accountsChannel = supabase
           .channel('accounts-changes')
           .on('broadcast', { event: 'accounts-change' }, () => {
             console.log('Accounts change received');
@@ -148,11 +147,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           .subscribe();
         
         return () => {
-          if (billsSubscription && typeof supabase.removeChannel === 'function') {
-            supabase.removeChannel(billsSubscription);
-          }
-          if (accountsSubscription && typeof supabase.removeChannel === 'function') {
-            supabase.removeChannel(accountsSubscription);
+          if (typeof supabase.removeChannel === 'function') {
+            if (billsChannel) supabase.removeChannel(billsChannel);
+            if (accountsChannel) supabase.removeChannel(accountsChannel);
           }
         };
       } catch (error) {

@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Try to get the environment variables
@@ -58,7 +57,7 @@ export const supabase = supabaseUrl && supabaseAnonKey
       }),
       channel: (name: string) => ({
         on: (type: string, filter: any, callback: () => void) => ({
-          subscribe: () => {}
+          subscribe: () => ({})
         })
       }),
       removeChannel: (channel: any) => {}
