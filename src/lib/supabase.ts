@@ -1,17 +1,66 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Try to get the environment variables
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
+// Check if environment variables are missing and log an error
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
+  console.error('Missing Supabase environment variables. Please make sure to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
 }
 
-export const supabase = createClient(
-  supabaseUrl || '',
-  supabaseAnonKey || ''
-);
+// Create a mock Supabase client if variables are missing
+export const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : {
+      // Provide mock implementations to prevent runtime errors
+      auth: {
+        getSession: async () => ({ data: { session: null } }),
+        getUser: async () => ({ data: { user: null } }),
+        onAuthStateChange: () => ({ 
+          data: { 
+            subscription: { 
+              unsubscribe: () => {} 
+            } 
+          } 
+        }),
+        signInWithPassword: async () => ({ error: new Error('Supabase not configured') }),
+        signUp: async () => ({ error: new Error('Supabase not configured') }),
+        signOut: async () => ({ error: null }),
+        resetPasswordForEmail: async () => ({ error: null }),
+      },
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            data: [],
+            error: null
+          })
+        }),
+        insert: () => ({
+          select: () => ({
+            data: null,
+            error: null
+          })
+        }),
+        update: () => ({
+          eq: () => ({
+            error: null
+          })
+        }),
+        delete: () => ({
+          eq: () => ({
+            error: null
+          })
+        })
+      }),
+      channel: () => ({
+        on: () => ({
+          subscribe: () => {}
+        })
+      }),
+      removeChannel: () => {}
+    };
 
 // Database types
 export type Tables = {

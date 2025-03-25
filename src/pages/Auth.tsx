@@ -20,6 +20,13 @@ const Auth = () => {
           <p className="text-muted-foreground">
             Manage your bills and track your finances with ease
           </p>
+          <div className="mt-4 p-4 bg-yellow-50 text-yellow-800 rounded-md">
+            <p className="text-sm font-medium">
+              Note: Supabase environment variables are missing. 
+              <br />
+              Please set them in your environment to enable authentication and database features.
+            </p>
+          </div>
         </div>
         <AuthForm />
       </div>
