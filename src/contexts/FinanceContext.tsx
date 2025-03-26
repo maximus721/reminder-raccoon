@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -59,6 +60,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Validate recurring value
+  const validateRecurring = (value: string): 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly' => {
+    const validValues = ['once', 'daily', 'weekly', 'monthly', 'yearly'];
+    return validValues.includes(value) 
+      ? value as 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly'
+      : 'once';
+  };
+
+  // Validate account type
+  const validateAccountType = (value: string): 'checking' | 'savings' | 'credit' | 'investment' | 'other' => {
+    const validValues = ['checking', 'savings', 'credit', 'investment', 'other'];
+    return validValues.includes(value) 
+      ? value as 'checking' | 'savings' | 'credit' | 'investment' | 'other'
+      : 'other';
+  };
+
   // Fetch bills and accounts from Supabase when user changes
   useEffect(() => {
     if (!user) {
@@ -80,13 +97,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           
         if (billsError) throw billsError;
           
-        // Transform database bills to application format
+        // Transform database bills to application format with proper type validation
         const transformedBills: Bill[] = (billsData || []).map(bill => ({
           id: bill.id,
           name: bill.name,
           amount: bill.amount,
           dueDate: bill.due_date,
-          recurring: bill.recurring,
+          recurring: validateRecurring(bill.recurring),
           paid: bill.paid,
           category: bill.category,
           notes: bill.notes
@@ -102,11 +119,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           
         if (accountsError) throw accountsError;
         
-        // Transform database accounts to application format
+        // Transform database accounts to application format with proper type validation
         const transformedAccounts: Account[] = (accountsData || []).map(account => ({
           id: account.id,
           name: account.name,
-          type: account.type,
+          type: validateAccountType(account.type),
           balance: account.balance,
           currency: account.currency,
           color: account.color
@@ -233,7 +250,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           name: data[0].name,
           amount: data[0].amount,
           dueDate: data[0].due_date,
-          recurring: data[0].recurring,
+          recurring: validateRecurring(data[0].recurring),
           paid: data[0].paid,
           category: data[0].category,
           notes: data[0].notes
@@ -334,7 +351,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         const newAccount: Account = {
           id: data[0].id,
           name: data[0].name,
-          type: data[0].type,
+          type: validateAccountType(data[0].type),
           balance: data[0].balance,
           currency: data[0].currency,
           color: data[0].color
