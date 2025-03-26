@@ -58,7 +58,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signUp({ email, password });
+      // Get the current URL for proper redirection
+      const currentOrigin = window.location.origin;
+      
+      const { error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+          emailRedirectTo: `${currentOrigin}/auth`,
+        }
+      });
+      
       if (error) throw error;
       toast.success('Signed up successfully, please check your email for verification');
     } catch (error: any) {
