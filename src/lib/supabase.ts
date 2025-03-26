@@ -1,67 +1,18 @@
+
 import { createClient } from '@supabase/supabase-js';
+import type { Tables } from '@/integrations/supabase/types';
 
-// Try to get the environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Use the environment variables from the Supabase integration
+const supabaseUrl = "https://aqqxoahqxnxsmtjcgwax.supabase.co";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcXhvYWhxeG54c210amNnd2F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MzAwNzEsImV4cCI6MjA1ODUwNjA3MX0.levhY4ChaLa7ooowuTNUrCiqdz8Jr24usfTrlvWWszE";
 
-// Check if environment variables are missing and log an error
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables. Please make sure to set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
-}
-
-// Create a mock Supabase client if variables are missing
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : {
-      // Provide mock implementations to prevent runtime errors
-      auth: {
-        getSession: async () => ({ data: { session: null } }),
-        getUser: async () => ({ data: { user: null } }),
-        onAuthStateChange: () => ({ 
-          data: { 
-            subscription: { 
-              unsubscribe: () => {} 
-            } 
-          } 
-        }),
-        signInWithPassword: async () => ({ error: new Error('Supabase not configured') }),
-        signUp: async () => ({ error: new Error('Supabase not configured') }),
-        signOut: async () => ({ error: null }),
-        resetPasswordForEmail: async () => ({ error: null }),
-      },
-      from: (table: string) => ({
-        select: (columns: string) => ({
-          eq: (column: string, value: any) => ({
-            data: [],
-            error: null
-          })
-        }),
-        insert: (values: any[]) => ({
-          select: () => ({
-            data: null,
-            error: null
-          })
-        }),
-        update: (values: any) => ({
-          eq: (column: string, value: any) => ({
-            data: null,
-            error: null
-          })
-        }),
-        delete: () => ({
-          eq: (column: string, value: any) => ({
-            data: null,
-            error: null
-          })
-        })
-      }),
-      channel: (name: string) => ({
-        on: (type: string, filter: any, callback: () => void) => ({
-          subscribe: () => ({})
-        })
-      }),
-      removeChannel: (channel: any) => {}
-    };
+// Create the Supabase client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+  }
+});
 
 // Database types
 export type Tables = {
