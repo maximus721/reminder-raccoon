@@ -67,9 +67,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         options: {
           emailRedirectTo: `${currentOrigin}/auth`,
-          data: {
-            email_confirmed: false, // Add this to track confirmation status
-          }
+          // Remove the data property with email_confirmed flag
+          // as we're not requiring confirmation anymore
         }
       });
       
@@ -81,7 +80,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      toast.success('Verification email sent! Please check your inbox and spam folder.');
+      // Since we're disabling email confirmation, we can sign the user in immediately
+      // No need to show a message about verification
+      toast.success('Account created successfully');
+      
+      // We automatically sign the user in after signup since no email confirmation is required
+      await signIn(email, password);
     } catch (error: any) {
       if (error.message.includes('already registered')) {
         toast.error('This email is already registered. Please sign in instead.');
