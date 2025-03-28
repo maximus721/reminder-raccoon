@@ -24,6 +24,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { InfoIcon } from 'lucide-react';
 
 const authSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -36,6 +38,7 @@ const AuthForm = () => {
   const { signIn, signUp, resetPassword } = useAuth();
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
@@ -60,6 +63,7 @@ const AuthForm = () => {
     try {
       setLoading(true);
       await signUp(data.email, data.password);
+      setEmailSent(true);
     } catch (error) {
       // Error is handled in the auth context
     } finally {
@@ -179,37 +183,47 @@ const AuthForm = () => {
               </form>
             </TabsContent>
             <TabsContent value="signup">
-              <form onSubmit={form.handleSubmit(onSignUp)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Email" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="Password" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Signing up...' : 'Sign Up'}
-                </Button>
-              </form>
+              {emailSent ? (
+                <Alert className="mb-4 bg-blue-50 border-blue-200">
+                  <InfoIcon className="h-4 w-4 text-blue-600 mr-2" />
+                  <AlertDescription className="text-blue-800">
+                    <p className="font-medium">Verification email sent!</p>
+                    <p className="mt-2">Please check both your inbox and spam folder. You need to verify your email before you can sign in.</p>
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <form onSubmit={form.handleSubmit(onSignUp)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="Password" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? 'Signing up...' : 'Sign Up'}
+                  </Button>
+                </form>
+              )}
             </TabsContent>
           </Form>
         </CardContent>

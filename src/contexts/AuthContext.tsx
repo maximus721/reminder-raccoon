@@ -58,21 +58,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string) => {
     try {
       setLoading(true);
+      
       // Get the current URL for proper redirection
       const currentOrigin = window.location.origin;
       
-      const { error } = await supabase.auth.signUp({ 
+      const { data, error } = await supabase.auth.signUp({
         email, 
         password,
         options: {
           emailRedirectTo: `${currentOrigin}/auth`,
+          data: {
+            email_confirmed: false, // Add this to track confirmation status
+          }
         }
       });
       
       if (error) throw error;
-      toast.success('Signed up successfully, please check your email for verification');
+      
+      // Check if user is in "email confirmation" state
+      if (data?.user?.identities?.length === 0) {
+        toast.error('The email is already registered. Please sign in instead.');
+        return;
+      }
+      
+      toast.success('Verification email sent! Please check your inbox and spam folder.');
     } catch (error: any) {
-      toast.error(error.message || 'Error signing up');
+      if (error.message.includes('already registered')) {
+        toast.error('This email is already registered. Please sign in instead.');
+      } else {
+        toast.error(error.message || 'Error signing up');
+      }
       throw error;
     } finally {
       setLoading(false);
