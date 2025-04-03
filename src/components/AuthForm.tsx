@@ -38,7 +38,8 @@ const AuthForm = () => {
   const { signIn, signUp, resetPassword } = useAuth();
   const [isResettingPassword, setIsResettingPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  // We don't need the emailSent state anymore since we're not showing verification messages
+  const [emailSent, setEmailSent] = useState(false);
+  const [verificationMessage, setVerificationMessage] = useState('');
   
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
@@ -62,8 +63,15 @@ const AuthForm = () => {
   const onSignUp = async (data: AuthFormValues) => {
     try {
       setLoading(true);
-      await signUp(data.email, data.password);
-      // No need to set emailSent as we're not showing verification messages
+      const result = await signUp(data.email, data.password);
+      
+      if (result.success) {
+        setEmailSent(true);
+        setVerificationMessage(result.message || 'Please check your email to verify your account.');
+        form.reset();
+      } else {
+        toast.error(result.message);
+      }
     } catch (error) {
       // Error is handled in the auth context
     } finally {
@@ -82,12 +90,41 @@ const AuthForm = () => {
       setLoading(true);
       await resetPassword(email);
       setIsResettingPassword(false);
+      setEmailSent(true);
+      setVerificationMessage('Password reset instructions have been sent to your email.');
+      form.reset();
     } catch (error) {
       // Error is handled in the auth context
     } finally {
       setLoading(false);
     }
   };
+
+  if (emailSent) {
+    return (
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle>Check Your Email</CardTitle>
+          <CardDescription>
+            {verificationMessage}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert>
+            <InfoIcon className="h-4 w-4 mr-2" />
+            <AlertDescription>
+              If you don't see the email in your inbox, please check your spam folder.
+            </AlertDescription>
+          </Alert>
+        </CardContent>
+        <CardFooter className="flex justify-center">
+          <Button variant="ghost" onClick={() => setEmailSent(false)}>
+            Back to login
+          </Button>
+        </CardFooter>
+      </Card>
+    );
+  }
 
   if (isResettingPassword) {
     return (

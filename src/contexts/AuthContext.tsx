@@ -9,7 +9,7 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<{ success: boolean, message?: string }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 };
@@ -67,8 +67,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         options: {
           emailRedirectTo: `${currentOrigin}/auth`,
-          // Remove the data property with email_confirmed flag
-          // as we're not requiring confirmation anymore
         }
       });
       
@@ -76,23 +74,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Check if user is in "email confirmation" state
       if (data?.user?.identities?.length === 0) {
-        toast.error('The email is already registered. Please sign in instead.');
-        return;
+        return {
+          success: false,
+          message: 'The email is already registered. Please sign in instead.'
+        };
       }
       
-      // Since we're disabling email confirmation, we can sign the user in immediately
-      // No need to show a message about verification
-      toast.success('Account created successfully');
-      
-      // We automatically sign the user in after signup since no email confirmation is required
-      await signIn(email, password);
+      // Show email verification message
+      return {
+        success: true,
+        message: 'Registration successful! Please check your email to verify your account.'
+      };
     } catch (error: any) {
       if (error.message.includes('already registered')) {
-        toast.error('This email is already registered. Please sign in instead.');
+        return {
+          success: false,
+          message: 'This email is already registered. Please sign in instead.'
+        };
       } else {
         toast.error(error.message || 'Error signing up');
+        return {
+          success: false,
+          message: error.message || 'Error signing up'
+        };
       }
-      throw error;
     } finally {
       setLoading(false);
     }
