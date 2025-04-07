@@ -15,6 +15,7 @@ export type Bill = {
   paid: boolean;
   category: string;
   notes?: string;
+  interest?: number; // Optional interest rate for debt
 };
 
 export type Account = {
@@ -106,7 +107,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           recurring: validateRecurring(bill.recurring),
           paid: bill.paid,
           category: bill.category,
-          notes: bill.notes
+          notes: bill.notes,
+          interest: bill.interest
         }));
         
         setBills(transformedBills);
@@ -238,7 +240,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           recurring: bill.recurring,
           paid: bill.paid,
           category: bill.category,
-          notes: bill.notes
+          notes: bill.notes,
+          interest: bill.interest
         }])
         .select();
         
@@ -253,7 +256,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           recurring: validateRecurring(data[0].recurring),
           paid: data[0].paid,
           category: data[0].category,
-          notes: data[0].notes
+          notes: data[0].notes,
+          interest: data[0].interest
         };
         
         setBills(prev => [...prev, newBill]);
@@ -281,6 +285,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if ('paid' in updatedFields) dbUpdates.paid = updatedFields.paid;
       if ('category' in updatedFields) dbUpdates.category = updatedFields.category;
       if ('notes' in updatedFields) dbUpdates.notes = updatedFields.notes;
+      if ('interest' in updatedFields) dbUpdates.interest = updatedFields.interest;
       
       const { error } = await supabase
         .from('bills')

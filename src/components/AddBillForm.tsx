@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { z } from 'zod';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, InfoIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFinance, Bill } from '@/contexts/FinanceContext';
 
@@ -23,7 +23,8 @@ import {
   FormField, 
   FormItem, 
   FormLabel, 
-  FormMessage 
+  FormMessage,
+  FormDescription
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Calendar } from '@/components/ui/calendar';
@@ -40,6 +41,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -58,6 +64,7 @@ const formSchema = z.object({
     required_error: 'Please select a category.',
   }),
   notes: z.string().optional(),
+  interest: z.coerce.number().min(0).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -97,6 +104,7 @@ const AddBillForm: React.FC<AddBillFormProps> = ({
       recurring: editingBill.recurring,
       category: editingBill.category,
       notes: editingBill.notes || '',
+      interest: editingBill.interest,
     } : {
       name: '',
       amount: 0,
@@ -104,8 +112,13 @@ const AddBillForm: React.FC<AddBillFormProps> = ({
       recurring: 'monthly',
       category: 'Other',
       notes: '',
+      interest: undefined,
     },
   });
+
+  // Watch the category field to show/hide interest rate
+  const selectedCategory = form.watch('category');
+  const showInterestField = selectedCategory.toLowerCase() === 'debt';
 
   function onSubmit(values: FormValues) {
     const billData = {
@@ -115,6 +128,7 @@ const AddBillForm: React.FC<AddBillFormProps> = ({
       recurring: values.recurring,
       category: values.category,
       notes: values.notes,
+      interest: values.interest,
       paid: false,
     };
 
@@ -266,6 +280,44 @@ const AddBillForm: React.FC<AddBillFormProps> = ({
                 </FormItem>
               )}
             />
+            
+            {showInterestField && (
+              <FormField
+                control={form.control}
+                name="interest"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Interest Rate (%)
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <InfoIcon className="h-4 w-4 ml-1 inline-block text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="w-[200px] text-sm">
+                            Annual interest rate for debt calculation (optional)
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="e.g. 5.99"
+                        step="0.01"
+                        min="0"
+                        {...field}
+                        value={field.value === undefined ? '' : field.value}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Optional: Enter the annual interest rate as a percentage
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             
             <FormField
               control={form.control}

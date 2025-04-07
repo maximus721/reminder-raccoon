@@ -1,9 +1,11 @@
 
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Trash } from 'lucide-react';
+import { Plus, Search, Filter, Trash, FileSpreadsheet } from 'lucide-react';
 import Header from '@/components/Header';
 import BillCard from '@/components/BillCard';
 import AddBillForm from '@/components/AddBillForm';
+import ImportBillsModal from '@/components/ImportBillsModal';
+import BillsSummary from '@/components/BillsSummary';
 import ReminderBanner from '@/components/ReminderBanner';
 import { useFinance, Bill } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
@@ -32,6 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 const Bills = () => {
   const { bills } = useFinance();
   const [isAddBillOpen, setIsAddBillOpen] = useState(false);
+  const [isImportBillsOpen, setIsImportBillsOpen] = useState(false);
   const [editingBill, setEditingBill] = useState<Bill | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
@@ -77,10 +80,21 @@ const Bills = () => {
             <h1 className="text-3xl font-bold">Bills</h1>
             <p className="text-muted-foreground">Manage and track your bills and payments</p>
           </div>
-          <Button onClick={handleAddNewClick} className="mt-4 sm:mt-0">
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Bill
-          </Button>
+          <div className="flex space-x-2 mt-4 sm:mt-0">
+            <Button variant="outline" onClick={() => setIsImportBillsOpen(true)}>
+              <FileSpreadsheet className="mr-2 h-4 w-4" />
+              Import Bills
+            </Button>
+            <Button onClick={handleAddNewClick}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Bill
+            </Button>
+          </div>
+        </div>
+
+        {/* Bills Summary Section */}
+        <div className="mb-6">
+          <BillsSummary />
         </div>
 
         {/* Search and filters */}
@@ -302,6 +316,11 @@ const Bills = () => {
         open={isAddBillOpen}
         onOpenChange={setIsAddBillOpen}
         editingBill={editingBill}
+      />
+      
+      <ImportBillsModal
+        open={isImportBillsOpen}
+        onOpenChange={setIsImportBillsOpen}
       />
       
       <ReminderBanner />
