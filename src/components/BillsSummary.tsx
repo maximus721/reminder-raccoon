@@ -9,6 +9,12 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Info } from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const BillsSummary = () => {
   const { bills } = useFinance();
@@ -60,6 +66,21 @@ const BillsSummary = () => {
     return grouped;
   }, [bills]);
 
+  // Calculate total with interest for debt items
+  const totalWithInterest = useMemo(() => {
+    let interestTotal = 0;
+    
+    bills.forEach(bill => {
+      if (!bill.paid && bill.category.toLowerCase() === 'debt' && bill.interest) {
+        // Simple interest calculation: amount * (interest rate / 100) / 12 (for monthly)
+        const monthlyInterest = bill.amount * (bill.interest / 100) / 12;
+        interestTotal += monthlyInterest;
+      }
+    });
+    
+    return summary.total + interestTotal;
+  }, [bills, summary.total]);
+
   return (
     <Card>
       <CardHeader>
@@ -67,10 +88,26 @@ const BillsSummary = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="bg-card border rounded-lg p-4 text-center">
               <p className="text-muted-foreground text-sm">Total Owed</p>
               <p className="text-2xl font-bold">${summary.total.toFixed(2)}</p>
+            </div>
+            <div className="bg-card border rounded-lg p-4 text-center">
+              <div className="flex items-center justify-center mb-1">
+                <p className="text-muted-foreground text-sm mr-1">With Interest</p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-[200px]">
+                    <p className="text-xs">
+                      Includes estimated monthly interest for debt items based on annual rates
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+              <p className="text-2xl font-bold">${totalWithInterest.toFixed(2)}</p>
             </div>
             <div className="bg-card border rounded-lg p-4 text-center">
               <p className="text-muted-foreground text-sm">Debt</p>

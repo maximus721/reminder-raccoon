@@ -49,6 +49,7 @@ export type Database = {
           created_at: string
           due_date: string
           id: string
+          interest: number | null
           name: string
           notes: string | null
           paid: boolean
@@ -61,6 +62,7 @@ export type Database = {
           created_at?: string
           due_date: string
           id?: string
+          interest?: number | null
           name: string
           notes?: string | null
           paid?: boolean
@@ -73,6 +75,7 @@ export type Database = {
           created_at?: string
           due_date?: string
           id?: string
+          interest?: number | null
           name?: string
           notes?: string | null
           paid?: boolean
