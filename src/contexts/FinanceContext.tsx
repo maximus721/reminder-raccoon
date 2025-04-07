@@ -96,7 +96,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           .eq('user_id', user.id);
           
         if (billsError) throw billsError;
-          
+        
         // Transform database bills to application format with proper type validation
         const transformedBills: Bill[] = (billsData || []).map(bill => ({
           id: bill.id,

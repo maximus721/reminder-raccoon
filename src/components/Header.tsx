@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Home, Receipt, Wallet, Calendar, Target } from 'lucide-react';
@@ -14,15 +13,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Header = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
 
-  // Define navigation links - Add the new Payment Goals link
   const navLinks = [
     { name: 'Dashboard', path: '/', icon: <Home className="h-5 w-5 mr-2" /> },
     { name: 'Bills', path: '/bills', icon: <Receipt className="h-5 w-5 mr-2" /> },
@@ -31,7 +29,6 @@ const Header = () => {
     { name: 'Payment Goals', path: '/payment-goals', icon: <Target className="h-5 w-5 mr-2" /> },
   ];
 
-  // Get first letter of user's email for avatar
   const userInitial = user?.email ? user.email[0].toUpperCase() : '?';
 
   return (
@@ -43,7 +40,6 @@ const Header = () => {
           </Link>
         </div>
 
-        {/* Desktop Navigation */}
         {!isMobile && (
           <nav className="mx-6 flex items-center space-x-4 lg:space-x-6">
             {navLinks.map((link) => (
@@ -63,7 +59,6 @@ const Header = () => {
           </nav>
         )}
 
-        {/* User Menu */}
         <div className="flex items-center gap-2">
           {user && (
             <DropdownMenu>
@@ -97,7 +92,6 @@ const Header = () => {
             </DropdownMenu>
           )}
 
-          {/* Mobile Menu */}
           {isMobile && (
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
