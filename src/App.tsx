@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Bills from "./pages/Bills";
 import Accounts from "./pages/Accounts";
 import Calendar from "./pages/Calendar";
+import PaymentGoals from "./pages/PaymentGoals";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -66,6 +67,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <Calendar />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/payment-goals" 
+        element={
+          <ProtectedRoute>
+            <PaymentGoals />
           </ProtectedRoute>
         } 
       />
