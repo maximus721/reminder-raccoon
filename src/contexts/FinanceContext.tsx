@@ -1,9 +1,17 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
-import { Account, AccountType, Bill, BillRecurring, Reminder, Transaction } from '@/types/finance';
+import { 
+  Account, 
+  AccountType, 
+  Bill, 
+  BillRecurring, 
+  Reminder, 
+  Transaction 
+} from '@/types/finance';
 
 type FinanceContextType = {
   bills: Bill[];
@@ -106,26 +114,36 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         if (transformedAccounts.length > 0) {
           try {
-            const { data: transactionsData, error: transactionsError } = await supabase
+            // Check if transactions table exists first
+            const { count, error: checkError } = await supabase
               .from('transactions')
-              .select('*')
-              .eq('user_id', user.id)
-              .order('date', { ascending: false })
-              .limit(100);
+              .select('*', { count: 'exact', head: true })
+              .limit(1);
               
-            if (!transactionsError) {
-              const transformedTransactions: Transaction[] = (transactionsData || []).map(tx => ({
-                id: tx.id,
-                accountId: tx.account_id,
-                date: tx.date,
-                description: tx.description,
-                amount: tx.amount,
-                category: tx.category || 'Uncategorized',
-                currency: tx.currency || 'USD',
-                plaidTransactionId: tx.plaid_transaction_id
-              }));
-              
-              setTransactions(transformedTransactions);
+            if (!checkError) {
+              const { data: transactionsData, error: transactionsError } = await supabase
+                .from('transactions')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('date', { ascending: false })
+                .limit(100);
+                
+              if (!transactionsError) {
+                const transformedTransactions: Transaction[] = (transactionsData || []).map(tx => ({
+                  id: tx.id,
+                  accountId: tx.account_id,
+                  date: tx.date,
+                  description: tx.description,
+                  amount: tx.amount,
+                  category: tx.category || 'Uncategorized',
+                  currency: tx.currency || 'USD',
+                  plaidTransactionId: tx.plaid_transaction_id
+                }));
+                
+                setTransactions(transformedTransactions);
+              }
+            } else {
+              console.log('Transactions table may not exist yet:', checkError);
             }
           } catch (error) {
             console.log('Transactions table may not exist yet:', error);
@@ -235,6 +253,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
+      // First, check if transactions table exists
+      try {
+        const { count, error: checkError } = await supabase
+          .from('transactions')
+          .select('*', { count: 'exact', head: true })
+          .limit(1);
+          
+        if (checkError) {
+          console.log('Transactions table may not exist yet:', checkError);
+          return [];
+        }
+      } catch (error) {
+        console.log('Error checking transactions table:', error);
+        return [];
+      }
+      
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
@@ -311,26 +345,34 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setAccounts(transformedAccounts);
       
       try {
-        const { data: transactionsData, error: transactionsError } = await supabase
+        // Check if transactions table exists first
+        const { count, error: checkError } = await supabase
           .from('transactions')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('date', { ascending: false })
-          .limit(100);
+          .select('*', { count: 'exact', head: true })
+          .limit(1);
           
-        if (!transactionsError) {
-          const transformedTransactions: Transaction[] = (transactionsData || []).map(tx => ({
-            id: tx.id,
-            accountId: tx.account_id,
-            date: tx.date,
-            description: tx.description,
-            amount: tx.amount,
-            category: tx.category || 'Uncategorized',
-            currency: tx.currency || 'USD',
-            plaidTransactionId: tx.plaid_transaction_id
-          }));
-          
-          setTransactions(transformedTransactions);
+        if (!checkError) {
+          const { data: transactionsData, error: transactionsError } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('date', { ascending: false })
+            .limit(100);
+            
+          if (!transactionsError) {
+            const transformedTransactions: Transaction[] = (transactionsData || []).map(tx => ({
+              id: tx.id,
+              accountId: tx.account_id,
+              date: tx.date,
+              description: tx.description,
+              amount: tx.amount,
+              category: tx.category || 'Uncategorized',
+              currency: tx.currency || 'USD',
+              plaidTransactionId: tx.plaid_transaction_id
+            }));
+            
+            setTransactions(transformedTransactions);
+          }
         }
       } catch (error) {
         console.log('Error fetching transactions:', error);
@@ -595,3 +637,6 @@ export const useFinance = () => {
   }
   return context;
 };
+
+// Re-export the types from the types file for components to use
+export type { Account, Bill, Transaction, Reminder, BillRecurring, AccountType } from '@/types/finance';
