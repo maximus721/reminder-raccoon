@@ -16,7 +16,10 @@ export type Database = {
           created_at: string
           currency: string
           id: string
+          last_updated: string | null
           name: string
+          plaid_account_id: string | null
+          plaid_item_id: string | null
           type: string
           user_id: string
         }
@@ -26,7 +29,10 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          last_updated?: string | null
           name: string
+          plaid_account_id?: string | null
+          plaid_item_id?: string | null
           type: string
           user_id: string
         }
@@ -36,7 +42,10 @@ export type Database = {
           created_at?: string
           currency?: string
           id?: string
+          last_updated?: string | null
           name?: string
+          plaid_account_id?: string | null
+          plaid_item_id?: string | null
           type?: string
           user_id?: string
         }
@@ -80,6 +89,86 @@ export type Database = {
           notes?: string | null
           paid?: boolean
           recurring?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          account_id: string
+          amount: number
+          category: string | null
+          created_at: string
+          currency: string | null
+          date: string
+          description: string
+          id: string
+          plaid_account_id: string | null
+          plaid_transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          category?: string | null
+          created_at?: string
+          currency?: string | null
+          date: string
+          description: string
+          id?: string
+          plaid_account_id?: string | null
+          plaid_transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          category?: string | null
+          created_at?: string
+          currency?: string | null
+          date?: string
+          description?: string
+          id?: string
+          plaid_account_id?: string | null
+          plaid_transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_plaid_credentials: {
+        Row: {
+          created_at: string
+          id: string
+          institution_id: string | null
+          institution_name: string | null
+          plaid_access_token: string
+          plaid_item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          institution_id?: string | null
+          institution_name?: string | null
+          plaid_access_token: string
+          plaid_item_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          institution_id?: string | null
+          institution_name?: string | null
+          plaid_access_token?: string
+          plaid_item_id?: string
           user_id?: string
         }
         Relationships: []

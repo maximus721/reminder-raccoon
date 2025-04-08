@@ -1,52 +1,9 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
-
-// Define types
-export type Bill = {
-  id: string;
-  name: string;
-  amount: number;
-  dueDate: string; // ISO format
-  recurring: 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-  paid: boolean;
-  category: string;
-  notes?: string;
-  interest?: number; // Optional interest rate for debt
-};
-
-export type Account = {
-  id: string;
-  name: string;
-  type: 'checking' | 'savings' | 'credit' | 'investment' | 'other';
-  balance: number;
-  currency: string;
-  color: string;
-  plaidAccountId?: string; // Optional Plaid account ID for linked accounts
-  lastUpdated?: string; // Optional timestamp of last update
-};
-
-export type Transaction = {
-  id: string;
-  accountId: string;
-  date: string; // ISO format
-  description: string;
-  amount: number; // Negative for expenses, positive for income
-  category: string;
-  currency: string;
-  plaidTransactionId?: string; // Optional Plaid transaction ID for imported transactions
-};
-
-export type Reminder = {
-  id: string;
-  billId: string;
-  dueDate: string; // ISO format
-  billName: string;
-  amount: number;
-};
+import { Account, AccountType, Bill, BillRecurring, Reminder, Transaction } from '@/types/finance';
 
 type FinanceContextType = {
   bills: Bill[];
@@ -78,23 +35,20 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Validate recurring value
-  const validateRecurring = (value: string): 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly' => {
+  const validateRecurring = (value: string): BillRecurring => {
     const validValues = ['once', 'daily', 'weekly', 'monthly', 'yearly'];
     return validValues.includes(value) 
-      ? value as 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly'
+      ? value as BillRecurring
       : 'once';
   };
 
-  // Validate account type
-  const validateAccountType = (value: string): 'checking' | 'savings' | 'credit' | 'investment' | 'other' => {
+  const validateAccountType = (value: string): AccountType => {
     const validValues = ['checking', 'savings', 'credit', 'investment', 'other'];
     return validValues.includes(value) 
-      ? value as 'checking' | 'savings' | 'credit' | 'investment' | 'other'
+      ? value as AccountType
       : 'other';
   };
 
-  // Fetch bills and accounts from Supabase when user changes
   useEffect(() => {
     if (!user) {
       setBills([]);
@@ -108,7 +62,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch bills
         const { data: billsData, error: billsError } = await supabase
           .from('bills')
           .select('*')
@@ -116,7 +69,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           
         if (billsError) throw billsError;
         
-        // Transform database bills to application format with proper type validation
         const transformedBills: Bill[] = (billsData || []).map(bill => ({
           id: bill.id,
           name: bill.name,
@@ -131,7 +83,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         setBills(transformedBills);
         
-        // Fetch accounts
         const { data: accountsData, error: accountsError } = await supabase
           .from('accounts')
           .select('*')
@@ -139,7 +90,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           
         if (accountsError) throw accountsError;
         
-        // Transform database accounts to application format with proper type validation
         const transformedAccounts: Account[] = (accountsData || []).map(account => ({
           id: account.id,
           name: account.name,
@@ -148,21 +98,20 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           currency: account.currency,
           color: account.color,
           plaidAccountId: account.plaid_account_id,
+          plaidItemId: account.plaid_item_id,
           lastUpdated: account.last_updated
         }));
         
         setAccounts(transformedAccounts);
         
-        // Fetch transactions (if we have accounts)
         if (transformedAccounts.length > 0) {
-          // We need to check if the transactions table exists 
           try {
             const { data: transactionsData, error: transactionsError } = await supabase
               .from('transactions')
               .select('*')
               .eq('user_id', user.id)
               .order('date', { ascending: false })
-              .limit(100); // Limit to recent transactions for performance
+              .limit(100);
               
             if (!transactionsError) {
               const transformedTransactions: Transaction[] = (transactionsData || []).map(tx => ({
@@ -171,16 +120,15 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 date: tx.date,
                 description: tx.description,
                 amount: tx.amount,
-                category: tx.category,
-                currency: tx.currency,
+                category: tx.category || 'Uncategorized',
+                currency: tx.currency || 'USD',
                 plaidTransactionId: tx.plaid_transaction_id
               }));
               
               setTransactions(transformedTransactions);
             }
-          } catch (transactionError) {
-            console.log('Transactions table may not exist yet:', transactionError);
-            // Don't throw here - just continue without transactions
+          } catch (error) {
+            console.log('Transactions table may not exist yet:', error);
           }
         }
       } catch (error) {
@@ -193,15 +141,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     fetchData();
 
-    // Only set up real-time subscriptions if we're not using the mock client
     if (typeof supabase.channel === 'function') {
       try {
-        // Set up channels for real-time updates
         const billsChannel = supabase
           .channel('bills-changes')
           .on('broadcast', { event: 'bills-change' }, () => {
             console.log('Bills change received');
-            // Refresh bills when there's a change
             fetchData();
           })
           .subscribe();
@@ -210,7 +155,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           .channel('accounts-changes')
           .on('broadcast', { event: 'accounts-change' }, () => {
             console.log('Accounts change received');
-            // Refresh accounts when there's a change
             fetchData();
           })
           .subscribe();
@@ -219,7 +163,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           .channel('transactions-changes')
           .on('broadcast', { event: 'transactions-change' }, () => {
             console.log('Transactions change received');
-            // Refresh transactions when there's a change
             fetchData();
           })
           .subscribe();
@@ -237,7 +180,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [user]);
 
-  // Calculate upcoming bills and generate reminders
   useEffect(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -246,7 +188,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const nextWeek = new Date(today);
     nextWeek.setDate(today.getDate() + 7);
     
-    // Generate reminders for upcoming bills
     const newReminders = bills
       .filter(bill => !bill.paid && new Date(bill.dueDate) <= nextWeek)
       .map(bill => ({
@@ -260,10 +201,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setReminders(newReminders);
   }, [bills]);
 
-  // Calculate total balance
   const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
 
-  // Calculate upcoming bills (due within 7 days, not paid)
   const upcomingBills = bills.filter(bill => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -277,13 +216,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return !bill.paid && dueDate > today && dueDate <= nextWeek;
   });
 
-  // Calculate bills due today (not paid)
   const dueTodayBills = bills.filter(bill => {
     const today = format(new Date(), 'yyyy-MM-dd');
     return !bill.paid && bill.dueDate === today;
   });
 
-  // Get recent transactions for a specific account
   const recentTransactions = (accountId: string, limit: number = 5): Transaction[] => {
     return transactions
       .filter(tx => tx.accountId === accountId)
@@ -291,7 +228,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       .slice(0, limit);
   };
 
-  // Get all transactions for an account
   const getTransactions = async (accountId: string): Promise<Transaction[]> => {
     if (!user) {
       toast.error('You must be logged in to view transactions');
@@ -299,31 +235,25 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      // Check if transactions table exists
-      try {
-        const { data, error } = await supabase
-          .from('transactions')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('account_id', accountId)
-          .order('date', { ascending: false });
-          
-        if (error) throw error;
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('account_id', accountId)
+        .order('date', { ascending: false });
         
-        return (data || []).map(tx => ({
-          id: tx.id,
-          accountId: tx.account_id,
-          date: tx.date,
-          description: tx.description,
-          amount: tx.amount,
-          category: tx.category,
-          currency: tx.currency,
-          plaidTransactionId: tx.plaid_transaction_id
-        }));
-      } catch (error) {
-        console.log('Transactions table may not exist yet:', error);
-        return [];
-      }
+      if (error) throw error;
+      
+      return (data || []).map(tx => ({
+        id: tx.id,
+        accountId: tx.account_id,
+        date: tx.date,
+        description: tx.description,
+        amount: tx.amount,
+        category: tx.category || 'Uncategorized',
+        currency: tx.currency || 'USD',
+        plaidTransactionId: tx.plaid_transaction_id
+      }));
     } catch (error) {
       console.error('Error fetching transactions:', error);
       toast.error('Failed to load transactions');
@@ -331,7 +261,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
-  // Refresh all linked accounts data
   const refreshAccounts = async (): Promise<void> => {
     if (!user) {
       toast.error('You must be logged in to refresh accounts');
@@ -341,15 +270,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       setLoading(true);
       
-      // Get current session
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
+      const { data } = await supabase.auth.getSession();
+      const accessToken = data?.session?.access_token;
       
       if (!accessToken) {
         throw new Error('No active session found');
       }
       
-      // Call the sync-accounts edge function
       const response = await fetch('https://aqqxoahqxnxsmtjcgwax.supabase.co/functions/v1/sync-accounts', {
         method: 'POST',
         headers: {
@@ -362,7 +289,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         throw new Error('Failed to sync accounts');
       }
       
-      // Refresh data after sync
       const { data: accountsData, error: accountsError } = await supabase
         .from('accounts')
         .select('*')
@@ -378,12 +304,12 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         currency: account.currency,
         color: account.color,
         plaidAccountId: account.plaid_account_id,
+        plaidItemId: account.plaid_item_id,
         lastUpdated: account.last_updated
       }));
       
       setAccounts(transformedAccounts);
       
-      // Refresh transactions too (if the table exists)
       try {
         const { data: transactionsData, error: transactionsError } = await supabase
           .from('transactions')
@@ -399,16 +325,15 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
             date: tx.date,
             description: tx.description,
             amount: tx.amount,
-            category: tx.category,
-            currency: tx.currency,
+            category: tx.category || 'Uncategorized',
+            currency: tx.currency || 'USD',
             plaidTransactionId: tx.plaid_transaction_id
           }));
           
           setTransactions(transformedTransactions);
         }
       } catch (error) {
-        console.log('Transactions table may not exist yet:', error);
-        // Continue without transactions
+        console.log('Error fetching transactions:', error);
       }
       
       toast.success('Accounts updated successfully');
@@ -473,7 +398,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      // Convert from application format to database format
       const dbUpdates: any = {};
       if ('name' in updatedFields) dbUpdates.name = updatedFields.name;
       if ('amount' in updatedFields) dbUpdates.amount = updatedFields.amount;
@@ -491,7 +415,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (error) throw error;
       
-      // Update local state as well (optimistic update)
       setBills(prev => 
         prev.map(bill => 
           bill.id === id ? { ...bill, ...updatedFields } : bill
@@ -519,7 +442,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (error) throw error;
       
-      // Update local state
       setBills(prev => prev.filter(bill => bill.id !== id));
       toast.success('Bill deleted successfully');
     } catch (error: any) {
@@ -535,7 +457,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      // Map from our application Account type to database format
       const dbAccount = {
         user_id: user.id,
         name: account.name,
@@ -544,6 +465,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         currency: account.currency,
         color: account.color,
         plaid_account_id: account.plaidAccountId,
+        plaid_item_id: account.plaidItemId,
         last_updated: account.lastUpdated
       };
       
@@ -563,6 +485,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           currency: data[0].currency,
           color: data[0].color,
           plaidAccountId: data[0].plaid_account_id,
+          plaidItemId: data[0].plaid_item_id,
           lastUpdated: data[0].last_updated
         };
         
@@ -582,7 +505,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      // Convert from application format to database format
       const dbUpdates: any = {};
       if ('name' in updatedFields) dbUpdates.name = updatedFields.name;
       if ('type' in updatedFields) dbUpdates.type = updatedFields.type;
@@ -590,6 +512,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if ('currency' in updatedFields) dbUpdates.currency = updatedFields.currency;
       if ('color' in updatedFields) dbUpdates.color = updatedFields.color;
       if ('plaidAccountId' in updatedFields) dbUpdates.plaid_account_id = updatedFields.plaidAccountId;
+      if ('plaidItemId' in updatedFields) dbUpdates.plaid_item_id = updatedFields.plaidItemId;
       if ('lastUpdated' in updatedFields) dbUpdates.last_updated = updatedFields.lastUpdated;
       
       const { error } = await supabase
@@ -599,7 +522,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (error) throw error;
       
-      // Update local state as well (optimistic update)
       setAccounts(prev => 
         prev.map(account => 
           account.id === id ? { ...account, ...updatedFields } : account
@@ -627,7 +549,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
       if (error) throw error;
       
-      // Update local state
       setAccounts(prev => prev.filter(account => account.id !== id));
       toast.success('Account deleted successfully');
     } catch (error: any) {

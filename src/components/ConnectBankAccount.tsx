@@ -35,8 +35,8 @@ const ConnectBankAccount: React.FC<ConnectBankAccountProps> = ({
     try {
       setLoading(true);
       // Get current session
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
+      const { data } = await supabase.auth.getSession();
+      const accessToken = data?.session?.access_token;
       
       if (!accessToken) {
         throw new Error('No active session found');
@@ -76,8 +76,8 @@ const ConnectBankAccount: React.FC<ConnectBankAccountProps> = ({
         setLoading(true);
         
         // Get current session
-        const { data: sessionData } = await supabase.auth.getSession();
-        const accessToken = sessionData?.session?.access_token;
+        const { data } = await supabase.auth.getSession();
+        const accessToken = data?.session?.access_token;
         
         if (!accessToken) {
           throw new Error('No active session found');
