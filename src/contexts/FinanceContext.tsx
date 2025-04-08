@@ -24,6 +24,19 @@ export type Account = {
   balance: number;
   currency: string;
   color: string;
+  plaidAccountId?: string; // Optional Plaid account ID for linked accounts
+  lastUpdated?: string; // Optional timestamp of last update
+};
+
+export type Transaction = {
+  id: string;
+  accountId: string;
+  date: string; // ISO format
+  description: string;
+  amount: number; // Negative for expenses, positive for income
+  category: string;
+  currency: string;
+  plaidTransactionId?: string; // Optional Plaid transaction ID for imported transactions
 };
 
 export type Reminder = {
@@ -48,6 +61,9 @@ type FinanceContextType = {
   updateAccount: (id: string, account: Partial<Account>) => Promise<void>;
   deleteAccount: (id: string) => Promise<void>;
   markBillAsPaid: (id: string) => Promise<void>;
+  getTransactions: (accountId: string) => Promise<Transaction[]>;
+  refreshAccounts: () => Promise<void>;
+  recentTransactions: (accountId: string, limit?: number) => Transaction[];
   loading: boolean;
 };
 
@@ -57,6 +73,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const { user } = useAuth();
   const [bills, setBills] = useState<Bill[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -81,6 +98,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     if (!user) {
       setBills([]);
       setAccounts([]);
+      setTransactions([]);
       setReminders([]);
       setLoading(false);
       return;
@@ -127,10 +145,37 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           type: validateAccountType(account.type),
           balance: account.balance,
           currency: account.currency,
-          color: account.color
+          color: account.color,
+          plaidAccountId: account.plaid_account_id,
+          lastUpdated: account.last_updated
         }));
         
         setAccounts(transformedAccounts);
+        
+        // Fetch transactions (if we have accounts)
+        if (transformedAccounts.length > 0) {
+          const { data: transactionsData, error: transactionsError } = await supabase
+            .from('transactions')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('date', { ascending: false })
+            .limit(100); // Limit to recent transactions for performance
+            
+          if (transactionsError) throw transactionsError;
+          
+          const transformedTransactions: Transaction[] = (transactionsData || []).map(tx => ({
+            id: tx.id,
+            accountId: tx.account_id,
+            date: tx.date,
+            description: tx.description,
+            amount: tx.amount,
+            category: tx.category,
+            currency: tx.currency,
+            plaidTransactionId: tx.plaid_transaction_id
+          }));
+          
+          setTransactions(transformedTransactions);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
         toast.error('Failed to load your data');
@@ -144,7 +189,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     // Only set up real-time subscriptions if we're not using the mock client
     if (typeof supabase.channel === 'function') {
       try {
-        // Set up a channel for real-time updates
+        // Set up channels for real-time updates
         const billsChannel = supabase
           .channel('bills-changes')
           .on('broadcast', { event: 'bills-change' }, () => {
@@ -154,7 +199,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           })
           .subscribe();
           
-        // Set up a channel for real-time updates
         const accountsChannel = supabase
           .channel('accounts-changes')
           .on('broadcast', { event: 'accounts-change' }, () => {
@@ -163,11 +207,21 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
             fetchData();
           })
           .subscribe();
+          
+        const transactionsChannel = supabase
+          .channel('transactions-changes')
+          .on('broadcast', { event: 'transactions-change' }, () => {
+            console.log('Transactions change received');
+            // Refresh transactions when there's a change
+            fetchData();
+          })
+          .subscribe();
         
         return () => {
           if (typeof supabase.removeChannel === 'function') {
             if (billsChannel) supabase.removeChannel(billsChannel);
             if (accountsChannel) supabase.removeChannel(accountsChannel);
+            if (transactionsChannel) supabase.removeChannel(transactionsChannel);
           }
         };
       } catch (error) {
@@ -221,6 +275,124 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const today = format(new Date(), 'yyyy-MM-dd');
     return !bill.paid && bill.dueDate === today;
   });
+
+  // Get recent transactions for a specific account
+  const recentTransactions = (accountId: string, limit: number = 5): Transaction[] => {
+    return transactions
+      .filter(tx => tx.accountId === accountId)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, limit);
+  };
+
+  // Get all transactions for an account
+  const getTransactions = async (accountId: string): Promise<Transaction[]> => {
+    if (!user) {
+      toast.error('You must be logged in to view transactions');
+      return [];
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('account_id', accountId)
+        .order('date', { ascending: false });
+        
+      if (error) throw error;
+      
+      return (data || []).map(tx => ({
+        id: tx.id,
+        accountId: tx.account_id,
+        date: tx.date,
+        description: tx.description,
+        amount: tx.amount,
+        category: tx.category,
+        currency: tx.currency,
+        plaidTransactionId: tx.plaid_transaction_id
+      }));
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+      toast.error('Failed to load transactions');
+      return [];
+    }
+  };
+
+  // Refresh all linked accounts data
+  const refreshAccounts = async (): Promise<void> => {
+    if (!user) {
+      toast.error('You must be logged in to refresh accounts');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Call the sync-accounts edge function
+      const response = await fetch('https://aqqxoahqxnxsmtjcgwax.supabase.co/functions/v1/sync-accounts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.auth.session()?.access_token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to sync accounts');
+      }
+      
+      // Refresh data after sync
+      const { data: accountsData, error: accountsError } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', user.id);
+        
+      if (accountsError) throw accountsError;
+      
+      const transformedAccounts: Account[] = (accountsData || []).map(account => ({
+        id: account.id,
+        name: account.name,
+        type: validateAccountType(account.type),
+        balance: account.balance,
+        currency: account.currency,
+        color: account.color,
+        plaidAccountId: account.plaid_account_id,
+        lastUpdated: account.last_updated
+      }));
+      
+      setAccounts(transformedAccounts);
+      
+      // Refresh transactions too
+      const { data: transactionsData, error: transactionsError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+        .limit(100);
+        
+      if (transactionsError) throw transactionsError;
+      
+      const transformedTransactions: Transaction[] = (transactionsData || []).map(tx => ({
+        id: tx.id,
+        accountId: tx.account_id,
+        date: tx.date,
+        description: tx.description,
+        amount: tx.amount,
+        category: tx.category,
+        currency: tx.currency,
+        plaidTransactionId: tx.plaid_transaction_id
+      }));
+      
+      setTransactions(transformedTransactions);
+      
+      toast.success('Accounts updated successfully');
+    } catch (error) {
+      console.error('Error refreshing accounts:', error);
+      toast.error('Failed to refresh accounts');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const addBill = async (bill: Omit<Bill, 'id'>) => {
     if (!user) {
@@ -345,7 +517,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           type: account.type,
           balance: account.balance,
           currency: account.currency,
-          color: account.color
+          color: account.color,
+          plaidAccountId: account.plaidAccountId,
+          lastUpdated: account.lastUpdated
         }])
         .select();
         
@@ -358,7 +532,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           type: validateAccountType(data[0].type),
           balance: data[0].balance,
           currency: data[0].currency,
-          color: data[0].color
+          color: data[0].color,
+          plaidAccountId: data[0].plaid_account_id,
+          lastUpdated: data[0].last_updated
         };
         
         setAccounts(prev => [...prev, newAccount]);
@@ -439,6 +615,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateAccount,
     deleteAccount,
     markBillAsPaid,
+    getTransactions,
+    refreshAccounts,
+    recentTransactions,
     loading
   };
 

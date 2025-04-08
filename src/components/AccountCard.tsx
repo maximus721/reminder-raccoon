@@ -6,6 +6,7 @@ import {
   Trash2,
   ArrowUpRight,
   ArrowDownRight,
+  ExternalLink
 } from 'lucide-react';
 import { Account, useFinance } from '@/contexts/FinanceContext';
 import { 
@@ -21,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import AccountDetailsModal from './AccountDetailsModal';
 
 interface AccountCardProps {
   account: Account;
@@ -36,13 +38,10 @@ const TYPE_LABELS: Record<string, string> = {
 };
 
 const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit }) => {
-  const { deleteAccount } = useFinance();
+  const { deleteAccount, recentTransactions } = useFinance();
 
-  // Sample transactions (in a real app, these would come from your data)
-  const sampleTransactions = [
-    { description: 'Deposit', amount: 245.00, isIncome: true },
-    { description: 'Amazon', amount: 29.99, isIncome: false },
-  ];
+  // Get recent transactions for this account
+  const accountTransactions = recentTransactions(account.id, 2);
 
   return (
     <Card className="overflow-hidden transition-all duration-300 animate-scale-in hover:shadow-md">
@@ -63,6 +62,11 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit }) => {
               <h3 className="font-medium text-base">{account.name}</h3>
               <p className="text-xs text-muted-foreground">
                 {TYPE_LABELS[account.type]}
+                {account.plaidAccountId && (
+                  <span className="ml-2 inline-flex items-center bg-green-100 text-green-800 text-xs px-1.5 py-0.5 rounded-full">
+                    Linked
+                  </span>
+                )}
               </p>
             </div>
           </div>
@@ -103,31 +107,44 @@ const AccountCard: React.FC<AccountCardProps> = ({ account, onEdit }) => {
       <CardFooter className="bg-muted/50 px-4 py-3 flex flex-col">
         <p className="text-xs font-medium text-muted-foreground mb-2">Recent Transactions</p>
         <div className="space-y-2 w-full">
-          {sampleTransactions.map((transaction, index) => (
-            <div key={index} className="flex justify-between items-center">
-              <div className="flex items-center">
+          {accountTransactions.length > 0 ? (
+            accountTransactions.map((transaction, index) => (
+              <div key={index} className="flex justify-between items-center">
+                <div className="flex items-center">
+                  <span 
+                    className={cn(
+                      "h-6 w-6 rounded-full flex items-center justify-center mr-2",
+                      transaction.amount > 0 ? "bg-green-100 text-green-600" : "bg-muted text-muted-foreground"
+                    )}
+                  >
+                    {transaction.amount > 0 ? <ArrowDownRight size={12} /> : <ArrowUpRight size={12} />}
+                  </span>
+                  <span className="text-xs">{transaction.description}</span>
+                </div>
                 <span 
                   className={cn(
-                    "h-6 w-6 rounded-full flex items-center justify-center mr-2",
-                    transaction.isIncome ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"
+                    "text-xs font-medium",
+                    transaction.amount > 0 ? "text-green-600" : ""
                   )}
                 >
-                  {transaction.isIncome ? <ArrowDownRight size={12} /> : <ArrowUpRight size={12} />}
+                  {transaction.amount > 0 ? "+" : "-"}
+                  ${Math.abs(transaction.amount).toFixed(2)}
                 </span>
-                <span className="text-xs">{transaction.description}</span>
               </div>
-              <span 
-                className={cn(
-                  "text-xs font-medium",
-                  transaction.isIncome ? "text-success" : ""
-                )}
-              >
-                {transaction.isIncome ? "+" : "-"}
-                ${transaction.amount.toFixed(2)}
-              </span>
+            ))
+          ) : (
+            <div className="text-xs text-center text-muted-foreground py-1">
+              No recent transactions
             </div>
-          ))}
+          )}
         </div>
+        
+        <AccountDetailsModal account={account}>
+          <Button variant="ghost" size="sm" className="w-full mt-2 text-xs">
+            View All Transactions
+            <ExternalLink className="ml-1 h-3 w-3" />
+          </Button>
+        </AccountDetailsModal>
       </CardFooter>
     </Card>
   );
