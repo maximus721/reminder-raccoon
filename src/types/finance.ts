@@ -3,6 +3,7 @@
 
 export type BillRecurring = 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 export type AccountType = 'checking' | 'savings' | 'credit' | 'investment' | 'other';
+export type SavingsGoalStatus = 'in-progress' | 'completed' | 'paused';
 
 export interface Bill {
   id: string;
@@ -46,3 +47,16 @@ export interface Reminder {
   billName: string;
   amount: number;
 }
+
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  deadline?: string | null; // Optional ISO format date
+  notes?: string | null;
+  category: string;
+  status: SavingsGoalStatus;
+  accountId?: string | null; // Optional linked account
+}
+

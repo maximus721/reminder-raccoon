@@ -3,6 +3,7 @@ import React from 'react';
 import Header from '@/components/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import DebtPayoffCalculator from '@/components/DebtPayoffCalculator';
+import SavingsGoalsCalculator from '@/components/SavingsGoalsCalculator';
 
 const PaymentGoals = () => {
   return (
@@ -25,12 +26,7 @@ const PaymentGoals = () => {
           </TabsContent>
           
           <TabsContent value="savings-goals" className="mt-6">
-            <div className="text-center py-12 bg-card rounded-lg border">
-              <p className="text-muted-foreground mb-2">Savings Goals Coming Soon</p>
-              <p className="text-sm text-muted-foreground">
-                This feature will be available in a future update.
-              </p>
-            </div>
+            <SavingsGoalsCalculator />
           </TabsContent>
         </Tabs>
       </main>

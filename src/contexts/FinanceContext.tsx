@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -10,13 +9,16 @@ import {
   Bill, 
   BillRecurring, 
   Reminder, 
-  Transaction 
+  Transaction,
+  SavingsGoal,
+  SavingsGoalStatus
 } from '@/types/finance';
 
 type FinanceContextType = {
   bills: Bill[];
   accounts: Account[];
   reminders: Reminder[];
+  savingsGoals: SavingsGoal[];
   totalBalance: number;
   upcomingBills: Bill[];
   dueTodayBills: Bill[];
@@ -30,6 +32,9 @@ type FinanceContextType = {
   getTransactions: (accountId: string) => Promise<Transaction[]>;
   refreshAccounts: () => Promise<void>;
   recentTransactions: (accountId: string, limit?: number) => Transaction[];
+  addSavingsGoal: (goal: Omit<SavingsGoal, 'id'>) => Promise<void>;
+  updateSavingsGoal: (id: string, goal: Partial<SavingsGoal>) => Promise<void>;
+  deleteSavingsGoal: (id: string) => Promise<void>;
   loading: boolean;
 };
 
@@ -41,6 +46,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [savingsGoals, setSavingsGoals] = useState<SavingsGoal[]>([]);
   const [loading, setLoading] = useState(true);
 
   const validateRecurring = (value: string): BillRecurring => {
@@ -63,6 +69,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setAccounts([]);
       setTransactions([]);
       setReminders([]);
+      setSavingsGoals([]);
       setLoading(false);
       return;
     }
@@ -112,9 +119,42 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         setAccounts(transformedAccounts);
         
+        try {
+          const { count, error: checkError } = await supabase
+            .from('savings_goals')
+            .select('*', { count: 'exact', head: true })
+            .limit(1);
+            
+          if (!checkError) {
+            const { data: goalsData, error: goalsError } = await supabase
+              .from('savings_goals')
+              .select('*')
+              .eq('user_id', user.id);
+              
+            if (!goalsError) {
+              const transformedGoals: SavingsGoal[] = (goalsData || []).map(goal => ({
+                id: goal.id,
+                name: goal.name,
+                targetAmount: goal.target_amount,
+                currentAmount: goal.current_amount,
+                deadline: goal.deadline,
+                notes: goal.notes,
+                category: goal.category,
+                status: goal.status as SavingsGoalStatus,
+                accountId: goal.account_id
+              }));
+              
+              setSavingsGoals(transformedGoals);
+            }
+          } else {
+            console.log('Savings goals table may not exist yet:', checkError);
+          }
+        } catch (error) {
+          console.log('Savings goals table may not exist yet:', error);
+        }
+
         if (transformedAccounts.length > 0) {
           try {
-            // Check if transactions table exists first
             const { count, error: checkError } = await supabase
               .from('transactions')
               .select('*', { count: 'exact', head: true })
@@ -185,11 +225,20 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           })
           .subscribe();
         
+        const savingsGoalsChannel = supabase
+          .channel('savings-goals-changes')
+          .on('broadcast', { event: 'savings-goals-change' }, () => {
+            console.log('Savings goals change received');
+            fetchData();
+          })
+          .subscribe();
+        
         return () => {
           if (typeof supabase.removeChannel === 'function') {
             if (billsChannel) supabase.removeChannel(billsChannel);
             if (accountsChannel) supabase.removeChannel(accountsChannel);
             if (transactionsChannel) supabase.removeChannel(transactionsChannel);
+            if (savingsGoalsChannel) supabase.removeChannel(savingsGoalsChannel);
           }
         };
       } catch (error) {
@@ -253,7 +302,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      // First, check if transactions table exists
       try {
         const { count, error: checkError } = await supabase
           .from('transactions')
@@ -345,7 +393,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setAccounts(transformedAccounts);
       
       try {
-        // Check if transactions table exists first
         const { count, error: checkError } = await supabase
           .from('transactions')
           .select('*', { count: 'exact', head: true })
@@ -599,6 +646,125 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   };
 
+  const addSavingsGoal = async (goal: Omit<SavingsGoal, 'id'>) => {
+    if (!user) {
+      toast.error('You must be logged in to add a savings goal');
+      return;
+    }
+
+    try {
+      try {
+        const { count, error: checkError } = await supabase
+          .from('savings_goals')
+          .select('*', { count: 'exact', head: true })
+          .limit(1);
+          
+        if (checkError) {
+          console.error('Savings goals table does not exist. Please create it first.');
+          toast.error('Unable to save goal. Table not set up.');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking savings_goals table:', error);
+        toast.error('Unable to save goal');
+        return;
+      }
+      
+      const { data, error } = await supabase
+        .from('savings_goals')
+        .insert([{
+          user_id: user.id,
+          name: goal.name,
+          target_amount: goal.targetAmount,
+          current_amount: goal.currentAmount,
+          deadline: goal.deadline,
+          notes: goal.notes,
+          category: goal.category,
+          status: goal.status,
+          account_id: goal.accountId
+        }])
+        .select();
+        
+      if (error) throw error;
+      
+      if (data && data[0]) {
+        const newGoal: SavingsGoal = {
+          id: data[0].id,
+          name: data[0].name,
+          targetAmount: data[0].target_amount,
+          currentAmount: data[0].current_amount,
+          deadline: data[0].deadline,
+          notes: data[0].notes,
+          category: data[0].category,
+          status: data[0].status as SavingsGoalStatus,
+          accountId: data[0].account_id
+        };
+        
+        setSavingsGoals(prev => [...prev, newGoal]);
+      }
+    } catch (error: any) {
+      console.error('Error adding savings goal:', error);
+      throw error;
+    }
+  };
+
+  const updateSavingsGoal = async (id: string, updatedFields: Partial<SavingsGoal>) => {
+    if (!user) {
+      toast.error('You must be logged in to update a savings goal');
+      return;
+    }
+
+    try {
+      const dbUpdates: any = {};
+      if ('name' in updatedFields) dbUpdates.name = updatedFields.name;
+      if ('targetAmount' in updatedFields) dbUpdates.target_amount = updatedFields.targetAmount;
+      if ('currentAmount' in updatedFields) dbUpdates.current_amount = updatedFields.currentAmount;
+      if ('deadline' in updatedFields) dbUpdates.deadline = updatedFields.deadline;
+      if ('notes' in updatedFields) dbUpdates.notes = updatedFields.notes;
+      if ('category' in updatedFields) dbUpdates.category = updatedFields.category;
+      if ('status' in updatedFields) dbUpdates.status = updatedFields.status;
+      if ('accountId' in updatedFields) dbUpdates.account_id = updatedFields.accountId;
+      
+      const { error } = await supabase
+        .from('savings_goals')
+        .update(dbUpdates)
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      setSavingsGoals(prev => 
+        prev.map(goal => 
+          goal.id === id ? { ...goal, ...updatedFields } : goal
+        )
+      );
+    } catch (error: any) {
+      console.error('Error updating savings goal:', error);
+      throw error;
+    }
+  };
+
+  const deleteSavingsGoal = async (id: string) => {
+    if (!user) {
+      toast.error('You must be logged in to delete a savings goal');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('savings_goals')
+        .delete()
+        .eq('id', id);
+        
+      if (error) throw error;
+      
+      setSavingsGoals(prev => prev.filter(goal => goal.id !== id));
+      toast.success('Savings goal deleted successfully');
+    } catch (error: any) {
+      console.error('Error deleting savings goal:', error);
+      toast.error(error.message || 'Failed to delete savings goal');
+    }
+  };
+
   const markBillAsPaid = async (id: string) => {
     await updateBill(id, { paid: true });
   };
@@ -607,6 +773,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     bills,
     accounts,
     reminders,
+    savingsGoals,
     totalBalance,
     upcomingBills,
     dueTodayBills,
@@ -620,6 +787,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     getTransactions,
     refreshAccounts,
     recentTransactions,
+    addSavingsGoal,
+    updateSavingsGoal,
+    deleteSavingsGoal,
     loading
   };
 
@@ -638,5 +808,13 @@ export const useFinance = () => {
   return context;
 };
 
-// Re-export the types from the types file for components to use
-export type { Account, Bill, Transaction, Reminder, BillRecurring, AccountType } from '@/types/finance';
+export type { 
+  Account, 
+  Bill, 
+  Transaction, 
+  Reminder, 
+  BillRecurring, 
+  AccountType,
+  SavingsGoal,
+  SavingsGoalStatus
+} from '@/types/finance';
