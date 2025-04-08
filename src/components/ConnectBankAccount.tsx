@@ -34,11 +34,19 @@ const ConnectBankAccount: React.FC<ConnectBankAccountProps> = ({
   const createLinkToken = useCallback(async () => {
     try {
       setLoading(true);
+      // Get current session
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      
+      if (!accessToken) {
+        throw new Error('No active session found');
+      }
+      
       const response = await fetch('https://aqqxoahqxnxsmtjcgwax.supabase.co/functions/v1/create-link-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.session()?.access_token}`
+          'Authorization': `Bearer ${accessToken}`
         }
       });
       
@@ -67,12 +75,20 @@ const ConnectBankAccount: React.FC<ConnectBankAccountProps> = ({
       try {
         setLoading(true);
         
+        // Get current session
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData?.session?.access_token;
+        
+        if (!accessToken) {
+          throw new Error('No active session found');
+        }
+        
         // Exchange public token for access token via our edge function
         const response = await fetch('https://aqqxoahqxnxsmtjcgwax.supabase.co/functions/v1/exchange-public-token', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabase.auth.session()?.access_token}`
+            'Authorization': `Bearer ${accessToken}`
           },
           body: JSON.stringify({ 
             public_token,

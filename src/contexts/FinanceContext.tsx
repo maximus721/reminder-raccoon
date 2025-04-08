@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -154,27 +155,33 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         // Fetch transactions (if we have accounts)
         if (transformedAccounts.length > 0) {
-          const { data: transactionsData, error: transactionsError } = await supabase
-            .from('transactions')
-            .select('*')
-            .eq('user_id', user.id)
-            .order('date', { ascending: false })
-            .limit(100); // Limit to recent transactions for performance
-            
-          if (transactionsError) throw transactionsError;
-          
-          const transformedTransactions: Transaction[] = (transactionsData || []).map(tx => ({
-            id: tx.id,
-            accountId: tx.account_id,
-            date: tx.date,
-            description: tx.description,
-            amount: tx.amount,
-            category: tx.category,
-            currency: tx.currency,
-            plaidTransactionId: tx.plaid_transaction_id
-          }));
-          
-          setTransactions(transformedTransactions);
+          // We need to check if the transactions table exists 
+          try {
+            const { data: transactionsData, error: transactionsError } = await supabase
+              .from('transactions')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('date', { ascending: false })
+              .limit(100); // Limit to recent transactions for performance
+              
+            if (!transactionsError) {
+              const transformedTransactions: Transaction[] = (transactionsData || []).map(tx => ({
+                id: tx.id,
+                accountId: tx.account_id,
+                date: tx.date,
+                description: tx.description,
+                amount: tx.amount,
+                category: tx.category,
+                currency: tx.currency,
+                plaidTransactionId: tx.plaid_transaction_id
+              }));
+              
+              setTransactions(transformedTransactions);
+            }
+          } catch (transactionError) {
+            console.log('Transactions table may not exist yet:', transactionError);
+            // Don't throw here - just continue without transactions
+          }
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -292,25 +299,31 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('account_id', accountId)
-        .order('date', { ascending: false });
+      // Check if transactions table exists
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('account_id', accountId)
+          .order('date', { ascending: false });
+          
+        if (error) throw error;
         
-      if (error) throw error;
-      
-      return (data || []).map(tx => ({
-        id: tx.id,
-        accountId: tx.account_id,
-        date: tx.date,
-        description: tx.description,
-        amount: tx.amount,
-        category: tx.category,
-        currency: tx.currency,
-        plaidTransactionId: tx.plaid_transaction_id
-      }));
+        return (data || []).map(tx => ({
+          id: tx.id,
+          accountId: tx.account_id,
+          date: tx.date,
+          description: tx.description,
+          amount: tx.amount,
+          category: tx.category,
+          currency: tx.currency,
+          plaidTransactionId: tx.plaid_transaction_id
+        }));
+      } catch (error) {
+        console.log('Transactions table may not exist yet:', error);
+        return [];
+      }
     } catch (error) {
       console.error('Error fetching transactions:', error);
       toast.error('Failed to load transactions');
@@ -328,12 +341,20 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     try {
       setLoading(true);
       
+      // Get current session
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      
+      if (!accessToken) {
+        throw new Error('No active session found');
+      }
+      
       // Call the sync-accounts edge function
       const response = await fetch('https://aqqxoahqxnxsmtjcgwax.supabase.co/functions/v1/sync-accounts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.session()?.access_token}`
+          'Authorization': `Bearer ${accessToken}`
         }
       });
       
@@ -362,28 +383,33 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       
       setAccounts(transformedAccounts);
       
-      // Refresh transactions too
-      const { data: transactionsData, error: transactionsError } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: false })
-        .limit(100);
-        
-      if (transactionsError) throw transactionsError;
-      
-      const transformedTransactions: Transaction[] = (transactionsData || []).map(tx => ({
-        id: tx.id,
-        accountId: tx.account_id,
-        date: tx.date,
-        description: tx.description,
-        amount: tx.amount,
-        category: tx.category,
-        currency: tx.currency,
-        plaidTransactionId: tx.plaid_transaction_id
-      }));
-      
-      setTransactions(transformedTransactions);
+      // Refresh transactions too (if the table exists)
+      try {
+        const { data: transactionsData, error: transactionsError } = await supabase
+          .from('transactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('date', { ascending: false })
+          .limit(100);
+          
+        if (!transactionsError) {
+          const transformedTransactions: Transaction[] = (transactionsData || []).map(tx => ({
+            id: tx.id,
+            accountId: tx.account_id,
+            date: tx.date,
+            description: tx.description,
+            amount: tx.amount,
+            category: tx.category,
+            currency: tx.currency,
+            plaidTransactionId: tx.plaid_transaction_id
+          }));
+          
+          setTransactions(transformedTransactions);
+        }
+      } catch (error) {
+        console.log('Transactions table may not exist yet:', error);
+        // Continue without transactions
+      }
       
       toast.success('Accounts updated successfully');
     } catch (error) {
@@ -509,18 +535,21 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
+      // Map from our application Account type to database format
+      const dbAccount = {
+        user_id: user.id,
+        name: account.name,
+        type: account.type,
+        balance: account.balance,
+        currency: account.currency,
+        color: account.color,
+        plaid_account_id: account.plaidAccountId,
+        last_updated: account.lastUpdated
+      };
+      
       const { data, error } = await supabase
         .from('accounts')
-        .insert([{
-          user_id: user.id,
-          name: account.name,
-          type: account.type,
-          balance: account.balance,
-          currency: account.currency,
-          color: account.color,
-          plaidAccountId: account.plaidAccountId,
-          lastUpdated: account.lastUpdated
-        }])
+        .insert([dbAccount])
         .select();
         
       if (error) throw error;
@@ -553,9 +582,19 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
+      // Convert from application format to database format
+      const dbUpdates: any = {};
+      if ('name' in updatedFields) dbUpdates.name = updatedFields.name;
+      if ('type' in updatedFields) dbUpdates.type = updatedFields.type;
+      if ('balance' in updatedFields) dbUpdates.balance = updatedFields.balance;
+      if ('currency' in updatedFields) dbUpdates.currency = updatedFields.currency;
+      if ('color' in updatedFields) dbUpdates.color = updatedFields.color;
+      if ('plaidAccountId' in updatedFields) dbUpdates.plaid_account_id = updatedFields.plaidAccountId;
+      if ('lastUpdated' in updatedFields) dbUpdates.last_updated = updatedFields.lastUpdated;
+      
       const { error } = await supabase
         .from('accounts')
-        .update(updatedFields)
+        .update(dbUpdates)
         .eq('id', id);
         
       if (error) throw error;
