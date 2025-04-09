@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -119,20 +120,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         setAccounts(transformedAccounts);
         
+        // Check if savings_goals table exists and get data
         try {
-          const { count, error: checkError } = await supabase
+          const { data: checkData, error: checkError } = await supabase
             .from('savings_goals')
-            .select('*', { count: 'exact', head: true })
+            .select('id')
             .limit(1);
             
+          // If there was no error, the table exists
           if (!checkError) {
             const { data: goalsData, error: goalsError } = await supabase
               .from('savings_goals')
               .select('*')
               .eq('user_id', user.id);
               
-            if (!goalsError) {
-              const transformedGoals: SavingsGoal[] = (goalsData || []).map(goal => ({
+            if (!goalsError && goalsData) {
+              const transformedGoals: SavingsGoal[] = goalsData.map(goal => ({
                 id: goal.id,
                 name: goal.name,
                 targetAmount: goal.target_amount,
@@ -150,16 +153,17 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
             console.log('Savings goals table may not exist yet:', checkError);
           }
         } catch (error) {
-          console.log('Savings goals table may not exist yet:', error);
+          console.log('Error checking savings goals table:', error);
         }
 
         if (transformedAccounts.length > 0) {
           try {
-            const { count, error: checkError } = await supabase
+            const { data: checkData, error: checkError } = await supabase
               .from('transactions')
-              .select('*', { count: 'exact', head: true })
+              .select('id')
               .limit(1);
               
+            // If there was no error, the table exists
             if (!checkError) {
               const { data: transactionsData, error: transactionsError } = await supabase
                 .from('transactions')
@@ -168,8 +172,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 .order('date', { ascending: false })
                 .limit(100);
                 
-              if (!transactionsError) {
-                const transformedTransactions: Transaction[] = (transactionsData || []).map(tx => ({
+              if (!transactionsError && transactionsData) {
+                const transformedTransactions: Transaction[] = transactionsData.map(tx => ({
                   id: tx.id,
                   accountId: tx.account_id,
                   date: tx.date,
@@ -186,7 +190,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
               console.log('Transactions table may not exist yet:', checkError);
             }
           } catch (error) {
-            console.log('Transactions table may not exist yet:', error);
+            console.log('Error checking transactions table:', error);
           }
         }
       } catch (error) {
@@ -653,10 +657,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
+      // First, check if the savings_goals table exists
       try {
-        const { count, error: checkError } = await supabase
+        const { data: checkData, error: checkError } = await supabase
           .from('savings_goals')
-          .select('*', { count: 'exact', head: true })
+          .select('id')
           .limit(1);
           
         if (checkError) {
@@ -670,6 +675,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return;
       }
       
+      // Now insert the new goal
       const { data, error } = await supabase
         .from('savings_goals')
         .insert([{
