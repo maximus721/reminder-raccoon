@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -120,10 +121,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setAccounts(transformedAccounts);
         
         try {
-          const { data: tableExistsData, error: checkError } = await supabase
-            .rpc('check_if_table_exists', { table_name: 'savings_goals' });
+          // Use fromTable helper to avoid TypeScript errors
+          const { data: tableExistsData, error: checkError } = await fromTable('rpc/check_if_table_exists')
+            .select()
+            .eq('table_name', 'savings_goals')
+            .single();
             
-          const tableExists = tableExistsData;
+          const tableExists = tableExistsData?.result || false;
           
           if (tableExists) {
             const response = await fetch(`https://aqqxoahqxnxsmtjcgwax.supabase.co/rest/v1/savings_goals?user_id=eq.${user.id}`, {
@@ -159,10 +163,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         if (transformedAccounts.length > 0) {
           try {
-            const { data: transactionsTableExists, error: transactionsCheckError } = await supabase
-              .rpc('check_if_table_exists', { table_name: 'transactions' });
+            // Use fromTable helper to avoid TypeScript errors
+            const { data: transactionsTableExists, error: transactionsCheckError } = await fromTable('rpc/check_if_table_exists')
+              .select()
+              .eq('table_name', 'transactions')
+              .single();
               
-            if (transactionsTableExists) {
+            if (transactionsTableExists?.result) {
               const { data: transactionsData, error: transactionsError } = await supabase
                 .from('transactions')
                 .select('*')
@@ -304,10 +311,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      const { data: transactionsTableExists, error: transactionsCheckError } = await supabase
-        .rpc('check_if_table_exists', { table_name: 'transactions' });
+      // Use fromTable helper to avoid TypeScript errors
+      const { data: transactionsTableExists, error: transactionsCheckError } = await fromTable('rpc/check_if_table_exists')
+        .select()
+        .eq('table_name', 'transactions')
+        .single();
         
-      if (!transactionsTableExists) {
+      if (!transactionsTableExists?.result) {
         console.log('Transactions table does not exist yet');
         return [];
       }
@@ -646,10 +656,13 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      const { data: savingsGoalsTableExists, error: checkError } = await supabase
-        .rpc('check_if_table_exists', { table_name: 'savings_goals' });
+      // Use fromTable helper to avoid TypeScript errors
+      const { data: savingsGoalsTableExists, error: checkError } = await fromTable('rpc/check_if_table_exists')
+        .select()
+        .eq('table_name', 'savings_goals')
+        .single();
         
-      if (!savingsGoalsTableExists) {
+      if (!savingsGoalsTableExists?.result) {
         console.error('Savings goals table does not exist. Please create it first.');
         toast.error('Unable to save goal. Table not set up.');
         return;
