@@ -122,20 +122,24 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         // Check if savings_goals table exists and get data
         try {
-          const { data: savingsGoalsData, error: savingsGoalsError } = await supabase
+          const { data: tableExistsData, error: checkError } = await supabase
             .rpc('check_if_table_exists', { table_name: 'savings_goals' });
             
-          const tableExists = savingsGoalsData;
+          const tableExists = tableExistsData;
           
           if (tableExists) {
-            // We need to use the raw query without type checking since TypeScript doesn't know about this table
-            const { data: goalsData, error: goalsError } = await supabase
-              .from('savings_goals')
-              .select('*')
-              .eq('user_id', user.id) as { data: any[], error: any };
-              
-            if (!goalsError && goalsData) {
-              const transformedGoals: SavingsGoal[] = goalsData.map(goal => ({
+            // Use a more generic approach to query the savings_goals table
+            const response = await fetch(`${supabase.supabaseUrl}/rest/v1/savings_goals?user_id=eq.${user.id}`, {
+              headers: {
+                'apikey': supabase.supabaseKey,
+                'Authorization': `Bearer ${supabase.supabaseKey}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            
+            if (response.ok) {
+              const goalsData = await response.json();
+              const transformedGoals: SavingsGoal[] = goalsData.map((goal: any) => ({
                 id: goal.id,
                 name: goal.name,
                 targetAmount: goal.target_amount,
@@ -655,7 +659,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return;
       }
       
-      // Now insert the new goal using a more type-safe approach
+      // Now insert the new goal using the REST API approach
       const goalToInsert = {
         user_id: user.id,
         name: goal.name,
@@ -668,13 +672,22 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         account_id: goal.accountId
       };
       
-      // We need to use a more generic approach since TypeScript doesn't know about this table
-      const { data, error } = await supabase
-        .from('savings_goals')
-        .insert([goalToInsert])
-        .select() as { data: any[], error: any };
-        
-      if (error) throw error;
+      const response = await fetch(`${supabase.supabaseUrl}/rest/v1/savings_goals`, {
+        method: 'POST',
+        headers: {
+          'apikey': supabase.supabaseKey,
+          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation'
+        },
+        body: JSON.stringify(goalToInsert)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to add savings goal');
+      }
+      
+      const data = await response.json();
       
       if (data && data[0]) {
         const newGoal: SavingsGoal = {
@@ -690,10 +703,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
         
         setSavingsGoals(prev => [...prev, newGoal]);
+        toast.success('Savings goal added successfully');
       }
     } catch (error: any) {
       console.error('Error adding savings goal:', error);
-      throw error;
+      toast.error(error.message || 'Failed to add savings goal');
     }
   };
 
@@ -714,22 +728,30 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if ('status' in updatedFields) dbUpdates.status = updatedFields.status;
       if ('accountId' in updatedFields) dbUpdates.account_id = updatedFields.accountId;
       
-      // Use a more generic approach for the update
-      const { error } = await supabase
-        .from('savings_goals')
-        .update(dbUpdates)
-        .eq('id', id) as { error: any };
-        
-      if (error) throw error;
+      const response = await fetch(`${supabase.supabaseUrl}/rest/v1/savings_goals?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabase.supabaseKey,
+          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dbUpdates)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update savings goal');
+      }
       
       setSavingsGoals(prev => 
         prev.map(goal => 
           goal.id === id ? { ...goal, ...updatedFields } : goal
         )
       );
+      
+      toast.success('Savings goal updated successfully');
     } catch (error: any) {
       console.error('Error updating savings goal:', error);
-      throw error;
+      toast.error(error.message || 'Failed to update savings goal');
     }
   };
 
@@ -740,13 +762,18 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      // Use a more generic approach for the delete operation
-      const { error } = await supabase
-        .from('savings_goals')
-        .delete()
-        .eq('id', id) as { error: any };
-        
-      if (error) throw error;
+      const response = await fetch(`${supabase.supabaseUrl}/rest/v1/savings_goals?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': supabase.supabaseKey,
+          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete savings goal');
+      }
       
       setSavingsGoals(prev => prev.filter(goal => goal.id !== id));
       toast.success('Savings goal deleted successfully');
@@ -809,4 +836,3 @@ export type {
   SavingsGoal,
   SavingsGoalStatus
 } from '@/types/finance';
-
