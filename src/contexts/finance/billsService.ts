@@ -21,7 +21,10 @@ export const fetchBills = async (userId: string): Promise<Bill[]> => {
     paid: bill.paid,
     category: bill.category,
     notes: bill.notes,
-    interest: bill.interest
+    interest: bill.interest,
+    snoozedUntil: bill.snoozed_until || null,
+    originalDueDate: bill.original_due_date || bill.due_date,
+    pastDueDays: bill.past_due_days || 0
   }));
   
   return transformedBills;
@@ -45,7 +48,10 @@ export const addBill = async (user: User | null, bill: Omit<Bill, 'id'>): Promis
         paid: bill.paid,
         category: bill.category,
         notes: bill.notes,
-        interest: bill.interest
+        interest: bill.interest,
+        snoozed_until: bill.snoozedUntil || null,
+        original_due_date: bill.originalDueDate || bill.dueDate,
+        past_due_days: bill.pastDueDays || 0
       }])
       .select();
       
@@ -61,7 +67,10 @@ export const addBill = async (user: User | null, bill: Omit<Bill, 'id'>): Promis
         paid: data[0].paid,
         category: data[0].category,
         notes: data[0].notes,
-        interest: data[0].interest
+        interest: data[0].interest,
+        snoozedUntil: data[0].snoozed_until || null,
+        originalDueDate: data[0].original_due_date || data[0].due_date,
+        pastDueDays: data[0].past_due_days || 0
       };
       
       toast.success('Bill added successfully');
@@ -91,6 +100,9 @@ export const updateBill = async (user: User | null, id: string, updatedFields: P
     if ('category' in updatedFields) dbUpdates.category = updatedFields.category;
     if ('notes' in updatedFields) dbUpdates.notes = updatedFields.notes;
     if ('interest' in updatedFields) dbUpdates.interest = updatedFields.interest;
+    if ('snoozedUntil' in updatedFields) dbUpdates.snoozed_until = updatedFields.snoozedUntil;
+    if ('originalDueDate' in updatedFields) dbUpdates.original_due_date = updatedFields.originalDueDate;
+    if ('pastDueDays' in updatedFields) dbUpdates.past_due_days = updatedFields.pastDueDays;
     
     const { error } = await supabase
       .from('bills')
@@ -128,5 +140,91 @@ export const deleteBill = async (user: User | null, id: string): Promise<boolean
     console.error('Error deleting bill:', error);
     toast.error(error.message || 'Failed to delete bill');
     return false;
+  }
+};
+
+export const snoozeBill = async (user: User | null, id: string, days: number): Promise<boolean> => {
+  if (!user) {
+    toast.error('You must be logged in to snooze a bill');
+    return false;
+  }
+  
+  if (days <= 0 || days > 29) {
+    toast.error('Bills can only be snoozed between 1 and 29 days');
+    return false;
+  }
+
+  try {
+    // First get the current bill to save the original due date
+    const { data: currentBill, error: fetchError } = await supabase
+      .from('bills')
+      .select('due_date, original_due_date')
+      .eq('id', id)
+      .single();
+      
+    if (fetchError) throw fetchError;
+    
+    // Calculate the new due date
+    const currentDueDate = new Date(currentBill.due_date);
+    const newDueDate = new Date(currentDueDate);
+    newDueDate.setDate(currentDueDate.getDate() + days);
+    
+    // Save the original due date if this is the first time snoozing
+    const originalDueDate = currentBill.original_due_date || currentBill.due_date;
+    
+    const { error: updateError } = await supabase
+      .from('bills')
+      .update({
+        due_date: newDueDate.toISOString().split('T')[0],
+        original_due_date: originalDueDate,
+        snoozed_until: newDueDate.toISOString().split('T')[0]
+      })
+      .eq('id', id);
+      
+    if (updateError) throw updateError;
+    
+    toast.success(`Bill snoozed for ${days} days`);
+    return true;
+  } catch (error: any) {
+    console.error('Error snoozing bill:', error);
+    toast.error(error.message || 'Failed to snooze bill');
+    return false;
+  }
+};
+
+export const calculatePastDueDays = async (user: User | null): Promise<void> => {
+  if (!user) return;
+
+  try {
+    // Get all unpaid bills
+    const { data: unpaidBills, error: fetchError } = await supabase
+      .from('bills')
+      .select('id, due_date')
+      .eq('user_id', user.id)
+      .eq('paid', false);
+      
+    if (fetchError) throw fetchError;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    // For each unpaid bill, calculate days past due
+    for (const bill of unpaidBills || []) {
+      const dueDate = new Date(bill.due_date);
+      dueDate.setHours(0, 0, 0, 0);
+      
+      // If due date is in the past
+      if (dueDate < today) {
+        const pastDueDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        // Update the bill with days past due
+        await supabase
+          .from('bills')
+          .update({ past_due_days: pastDueDays })
+          .eq('id', bill.id);
+      }
+    }
+  } catch (error) {
+    console.error('Error calculating past due days:', error);
   }
 };

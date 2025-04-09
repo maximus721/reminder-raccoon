@@ -1,4 +1,3 @@
-
 // Define shared finance-related types for the application
 
 export type BillRecurring = 'once' | 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -15,6 +14,9 @@ export interface Bill {
   category: string;
   notes?: string;
   interest?: number | null; // Optional interest rate for debt
+  snoozedUntil?: string | null; // Date until which the bill is snoozed
+  originalDueDate?: string | null; // Original due date before snoozing
+  pastDueDays?: number; // Number of days past due
 }
 
 export interface Account {
@@ -59,4 +61,3 @@ export interface SavingsGoal {
   status: SavingsGoalStatus;
   accountId?: string | null; // Optional linked account
 }
-

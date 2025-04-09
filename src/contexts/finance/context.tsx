@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -29,6 +30,7 @@ type FinanceContextType = {
   upcomingBills: Bill[];
   dueTodayBills: Bill[];
   urgentBills: Bill[];
+  pastDueBills: Bill[];
   addBill: (bill: Omit<Bill, 'id'>) => Promise<void>;
   updateBill: (id: string, bill: Partial<Bill>) => Promise<void>;
   deleteBill: (id: string) => Promise<void>;
@@ -36,6 +38,8 @@ type FinanceContextType = {
   updateAccount: (id: string, account: Partial<Account>) => Promise<void>;
   deleteAccount: (id: string) => Promise<void>;
   markBillAsPaid: (id: string) => Promise<void>;
+  snoozeBill: (id: string, days: number) => Promise<void>;
+  isUrgentBill: (bill: Bill) => boolean;
   getTransactions: (accountId: string) => Promise<Transaction[]>;
   refreshAccounts: () => Promise<void>;
   recentTransactions: (accountId: string, limit?: number) => Transaction[];
@@ -70,6 +74,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Calculate past due days for bills
+        await billsService.calculatePastDueDays(user);
+        
         // Fetch bills
         const fetchedBills = await billsService.fetchBills(user.id);
         setBills(fetchedBills);
@@ -179,8 +186,16 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Get upcoming bills
   const upcomingBills = remindersService.getUpcomingBills(bills);
 
-  // Get urgent bills due within 5 days
-  const urgentBills = remindersService.getBillsDueWithinDays(bills, 5);
+  // Get urgent bills
+  const urgentBills = remindersService.getUrgentBills(bills);
+
+  // Get past due bills
+  const pastDueBills = bills.filter(bill => !bill.paid && bill.pastDueDays && bill.pastDueDays > 0);
+
+  // Check if bill is urgent
+  const isUrgentBill = (bill: Bill) => {
+    return remindersService.isUrgentBill(bill);
+  };
 
   // Get recent transactions for an account
   const recentTransactions = (accountId: string, limit: number = 5): Transaction[] => {
@@ -245,6 +260,16 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const success = await billsService.deleteBill(user, id);
     if (success) {
       setBills(prev => prev.filter(bill => bill.id !== id));
+    }
+  };
+
+  // Snooze bill
+  const snoozeBill = async (id: string, days: number) => {
+    const success = await billsService.snoozeBill(user, id, days);
+    if (success) {
+      // Refetch bills to get updated data
+      const updatedBills = await billsService.fetchBills(user!.id);
+      setBills(updatedBills);
     }
   };
 
@@ -318,6 +343,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     upcomingBills,
     dueTodayBills,
     urgentBills,
+    pastDueBills,
     addBill,
     updateBill,
     deleteBill,
@@ -325,6 +351,8 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateAccount,
     deleteAccount,
     markBillAsPaid,
+    snoozeBill,
+    isUrgentBill,
     getTransactions,
     refreshAccounts,
     recentTransactions,
