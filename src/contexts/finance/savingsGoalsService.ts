@@ -9,7 +9,7 @@ export const fetchSavingsGoals = async (userId: string): Promise<SavingsGoal[]> 
     // Check if savings_goals table exists
     const { data: checkData } = await supabase.rpc('check_if_table_exists', { 
       table_name: 'savings_goals' 
-    });
+    } as any);
     
     if (!checkData) {
       console.log('Savings goals table does not exist yet');
@@ -59,7 +59,7 @@ export const addSavingsGoal = async (user: User | null, goal: Omit<SavingsGoal, 
     // Check if savings_goals table exists
     const { data: checkData } = await supabase.rpc('check_if_table_exists', { 
       table_name: 'savings_goals' 
-    });
+    } as any);
     
     if (!checkData) {
       console.error('Savings goals table does not exist. Please create it first.');

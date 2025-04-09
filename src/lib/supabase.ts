@@ -24,6 +24,16 @@ export function fromTable(tableName: string) {
 export type Bills = Database['public']['Tables']['bills']['Row'];
 export type Accounts = Database['public']['Tables']['accounts']['Row'];
 
+// Add TypeScript interface for the check_if_table_exists RPC function
+declare module '@supabase/supabase-js' {
+  interface SupabaseClient<Database> {
+    rpc<T = any>(
+      fn: 'check_if_table_exists',
+      params: { table_name: string }
+    ): Promise<{ data: T; error: Error | null }>;
+  }
+}
+
 // Helper function to check if user is logged in
 export const isAuthenticated = async () => {
   const { data: { session } } = await supabase.auth.getSession();

@@ -10,7 +10,7 @@ export const fetchTransactions = async (userId: string, accountId?: string, limi
     // Check if transactions table exists
     const { data: checkData } = await supabase.rpc('check_if_table_exists', { 
       table_name: 'transactions' 
-    });
+    } as any);
     
     if (!checkData) {
       console.log('Transactions table does not exist yet');
