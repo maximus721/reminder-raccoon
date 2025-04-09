@@ -122,17 +122,17 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         // Check if savings_goals table exists and get data
         try {
-          const { data: checkData, error: checkError } = await supabase
-            .from('savings_goals')
-            .select('id')
-            .limit(1);
+          const { data: savingsGoalsData, error: savingsGoalsError } = await supabase
+            .rpc('check_if_table_exists', { table_name: 'savings_goals' });
             
-          // If there was no error, the table exists
-          if (!checkError) {
+          const tableExists = savingsGoalsData;
+          
+          if (tableExists) {
+            // We need to use the raw query without type checking since TypeScript doesn't know about this table
             const { data: goalsData, error: goalsError } = await supabase
               .from('savings_goals')
               .select('*')
-              .eq('user_id', user.id);
+              .eq('user_id', user.id) as { data: any[], error: any };
               
             if (!goalsError && goalsData) {
               const transformedGoals: SavingsGoal[] = goalsData.map(goal => ({
@@ -150,7 +150,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
               setSavingsGoals(transformedGoals);
             }
           } else {
-            console.log('Savings goals table may not exist yet:', checkError);
+            console.log('Savings goals table does not exist yet');
           }
         } catch (error) {
           console.log('Error checking savings goals table:', error);
@@ -158,13 +158,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
         if (transformedAccounts.length > 0) {
           try {
-            const { data: checkData, error: checkError } = await supabase
-              .from('transactions')
-              .select('id')
-              .limit(1);
+            const { data: transactionsTableExists, error: transactionsCheckError } = await supabase
+              .rpc('check_if_table_exists', { table_name: 'transactions' });
               
-            // If there was no error, the table exists
-            if (!checkError) {
+            if (transactionsTableExists) {
               const { data: transactionsData, error: transactionsError } = await supabase
                 .from('transactions')
                 .select('*')
@@ -187,7 +184,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
                 setTransactions(transformedTransactions);
               }
             } else {
-              console.log('Transactions table may not exist yet:', checkError);
+              console.log('Transactions table does not exist yet');
             }
           } catch (error) {
             console.log('Error checking transactions table:', error);
@@ -306,18 +303,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      try {
-        const { count, error: checkError } = await supabase
-          .from('transactions')
-          .select('*', { count: 'exact', head: true })
-          .limit(1);
-          
-        if (checkError) {
-          console.log('Transactions table may not exist yet:', checkError);
-          return [];
-        }
-      } catch (error) {
-        console.log('Error checking transactions table:', error);
+      const { data: transactionsTableExists, error: transactionsCheckError } = await supabase
+        .rpc('check_if_table_exists', { table_name: 'transactions' });
+        
+      if (!transactionsTableExists) {
+        console.log('Transactions table does not exist yet');
         return [];
       }
       
@@ -397,12 +387,10 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       setAccounts(transformedAccounts);
       
       try {
-        const { count, error: checkError } = await supabase
-          .from('transactions')
-          .select('*', { count: 'exact', head: true })
-          .limit(1);
+        const { data: transactionsTableExists, error: transactionsCheckError } = await supabase
+          .rpc('check_if_table_exists', { table_name: 'transactions' });
           
-        if (!checkError) {
+        if (transactionsTableExists) {
           const { data: transactionsData, error: transactionsError } = await supabase
             .from('transactions')
             .select('*')
@@ -658,38 +646,33 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
     try {
       // First, check if the savings_goals table exists
-      try {
-        const { data: checkData, error: checkError } = await supabase
-          .from('savings_goals')
-          .select('id')
-          .limit(1);
-          
-        if (checkError) {
-          console.error('Savings goals table does not exist. Please create it first.');
-          toast.error('Unable to save goal. Table not set up.');
-          return;
-        }
-      } catch (error) {
-        console.error('Error checking savings_goals table:', error);
-        toast.error('Unable to save goal');
+      const { data: savingsGoalsTableExists, error: checkError } = await supabase
+        .rpc('check_if_table_exists', { table_name: 'savings_goals' });
+        
+      if (!savingsGoalsTableExists) {
+        console.error('Savings goals table does not exist. Please create it first.');
+        toast.error('Unable to save goal. Table not set up.');
         return;
       }
       
-      // Now insert the new goal
+      // Now insert the new goal using a more type-safe approach
+      const goalToInsert = {
+        user_id: user.id,
+        name: goal.name,
+        target_amount: goal.targetAmount,
+        current_amount: goal.currentAmount,
+        deadline: goal.deadline,
+        notes: goal.notes,
+        category: goal.category,
+        status: goal.status,
+        account_id: goal.accountId
+      };
+      
+      // We need to use a more generic approach since TypeScript doesn't know about this table
       const { data, error } = await supabase
         .from('savings_goals')
-        .insert([{
-          user_id: user.id,
-          name: goal.name,
-          target_amount: goal.targetAmount,
-          current_amount: goal.currentAmount,
-          deadline: goal.deadline,
-          notes: goal.notes,
-          category: goal.category,
-          status: goal.status,
-          account_id: goal.accountId
-        }])
-        .select();
+        .insert([goalToInsert])
+        .select() as { data: any[], error: any };
         
       if (error) throw error;
       
@@ -731,10 +714,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if ('status' in updatedFields) dbUpdates.status = updatedFields.status;
       if ('accountId' in updatedFields) dbUpdates.account_id = updatedFields.accountId;
       
+      // Use a more generic approach for the update
       const { error } = await supabase
         .from('savings_goals')
         .update(dbUpdates)
-        .eq('id', id);
+        .eq('id', id) as { error: any };
         
       if (error) throw error;
       
@@ -756,10 +740,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
+      // Use a more generic approach for the delete operation
       const { error } = await supabase
         .from('savings_goals')
         .delete()
-        .eq('id', id);
+        .eq('id', id) as { error: any };
         
       if (error) throw error;
       
@@ -824,3 +809,4 @@ export type {
   SavingsGoal,
   SavingsGoalStatus
 } from '@/types/finance';
+
