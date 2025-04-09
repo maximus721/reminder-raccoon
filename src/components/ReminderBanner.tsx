@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { X, AlertCircle, Clock, Calendar, Snooze, CalendarX } from 'lucide-react';
+import { X, AlertCircle, Clock, Calendar, AlarmClock, CalendarX } from 'lucide-react';
 import { format } from 'date-fns';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
@@ -109,7 +109,7 @@ const ReminderBanner = () => {
                         <p className="text-xs text-muted-foreground">${bill.amount.toFixed(2)}</p>
                         <span className="text-xs text-muted-foreground">•</span>
                         <p className="text-xs text-muted-foreground flex items-center">
-                          <Snooze size={12} className="mr-0.5" />
+                          <AlarmClock size={12} className="mr-0.5" /> {/* Changed from Snooze to AlarmClock */}
                           Until {format(new Date(bill.snoozedUntil!), 'MMM d')}
                         </p>
                       </div>
@@ -207,7 +207,7 @@ const ReminderBanner = () => {
                           : "bg-amber-500/20 text-amber-500"
                     )}>
                       {bill.snoozedUntil
-                        ? <Snooze size={14} />
+                        ? <AlarmClock size={14} /> {/* Changed from Snooze to AlarmClock */}
                         : isUrgent(bill.id) 
                           ? <AlertCircle size={14} /> 
                           : <Calendar size={14} />

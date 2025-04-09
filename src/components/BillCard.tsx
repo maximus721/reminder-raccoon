@@ -12,7 +12,7 @@ import {
   Clock,
   CalendarX,
   CalendarCheck,
-  Snooze
+  AlarmClock
 } from 'lucide-react';
 import { Bill, useFinance } from '@/contexts/FinanceContext';
 import { 
@@ -88,7 +88,7 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
 
   if (isPaid) StatusIcon = CalendarCheck;
   else if (isOverdue) StatusIcon = CalendarX;
-  else if (isSnoozed) StatusIcon = Snooze;
+  else if (isSnoozed) StatusIcon = AlarmClock; // Changed from Snooze to AlarmClock
   else if (isUrgent) StatusIcon = AlertCircle;
   else if (isDueToday) StatusIcon = Clock;
 
@@ -123,7 +123,7 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
                 )}
                 {isSnoozed && (
                   <span className="ml-2 text-[10px] bg-indigo-500 text-white px-1 py-0.5 rounded-full flex items-center">
-                    <Snooze size={8} className="mr-0.5" />
+                    <AlarmClock size={8} className="mr-0.5" /> {/* Changed from Snooze to AlarmClock */}
                     Snoozed
                   </span>
                 )}
@@ -194,7 +194,7 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
                 {!bill.paid && (
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      <Snooze size={14} className="mr-2" />
+                      <AlarmClock size={14} className="mr-2" /> {/* Changed from Snooze to AlarmClock */}
                       Snooze Bill
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
