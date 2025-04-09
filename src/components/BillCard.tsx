@@ -7,7 +7,8 @@ import {
   MoreVertical,
   Check,
   Pencil,
-  Trash2
+  Trash2,
+  AlertCircle
 } from 'lucide-react';
 import { Bill, useFinance } from '@/contexts/FinanceContext';
 import { 
@@ -42,7 +43,7 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 };
 
 const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
-  const { deleteBill, markBillAsPaid } = useFinance();
+  const { deleteBill, markBillAsPaid, urgentBills } = useFinance();
 
   // Determine status
   const today = new Date();
@@ -54,17 +55,20 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
   const isOverdue = !isPaid && dueDate < today;
   const isDueToday = !isPaid && dueDate.getTime() === today.getTime();
   const isDueSoon = !isPaid && dueDate > today && dueDate <= new Date(today.getTime() + 2 * 24 * 60 * 60 * 1000); // 2 days
+  const isUrgent = !isPaid && urgentBills.some(urgentBill => urgentBill.id === bill.id);
   
   let statusColor = 'bg-secondary text-secondary-foreground';
   if (isPaid) statusColor = 'bg-success/20 text-success';
   else if (isOverdue) statusColor = 'bg-destructive/20 text-destructive';
   else if (isDueToday) statusColor = 'bg-amber-500/20 text-amber-500';
+  else if (isUrgent) statusColor = 'bg-red-500/20 text-red-500'; 
   else if (isDueSoon) statusColor = 'bg-amber-400/20 text-amber-400';
 
   let statusText = 'Upcoming';
   if (isPaid) statusText = 'Paid';
   else if (isOverdue) statusText = 'Overdue';
   else if (isDueToday) statusText = 'Due Today';
+  else if (isUrgent) statusText = 'Urgent';
   else if (isDueSoon) statusText = 'Due Soon';
 
   const RecurringIcon = bill.recurring !== 'once' ? CalendarClock : Calendar;
@@ -72,6 +76,7 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
   return (
     <Card className={cn(
       "overflow-hidden transition-all duration-300 animate-scale-in hover:shadow-md",
+      isUrgent && "border-red-500",
       isPaid && "opacity-75"
     )}>
       <CardContent className="p-4">
@@ -81,9 +86,25 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
               {CATEGORY_ICONS[bill.category.toLowerCase()] || '📋'}
             </div>
             <div>
-              <h3 className="font-medium text-base mb-0.5">{bill.name}</h3>
+              <h3 className={cn(
+                "font-medium text-base mb-0.5 flex items-center",
+                isUrgent && "text-red-500"
+              )}>
+                {bill.name}
+                {isUrgent && (
+                  <span className="ml-2 text-[10px] bg-red-500 text-white px-1 py-0.5 rounded-full flex items-center">
+                    <AlertCircle size={8} className="mr-0.5" />
+                    Urgent
+                  </span>
+                )}
+              </h3>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-semibold">${bill.amount.toFixed(2)}</span>
+                <span className={cn(
+                  "text-sm font-semibold",
+                  isUrgent && "text-red-500"
+                )}>
+                  ${bill.amount.toFixed(2)}
+                </span>
                 <span className="text-sm text-muted-foreground">•</span>
                 <div className="flex items-center text-xs text-muted-foreground">
                   <RecurringIcon size={14} className="mr-1" />

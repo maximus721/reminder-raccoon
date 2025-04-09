@@ -9,6 +9,7 @@ export interface RemindersService {
   generateReminders: (bills: Bill[]) => Bill[];
   getBillsDueToday: (bills: Bill[]) => Bill[];
   getUpcomingBills: (bills: Bill[]) => Bill[];
+  getBillsDueWithinDays: (bills: Bill[], days: number) => Bill[];
 }
 
 export const remindersService: RemindersService = {
@@ -41,6 +42,20 @@ export const remindersService: RemindersService = {
       const billDueDate = new Date(bill.dueDate);
       billDueDate.setHours(0, 0, 0, 0);
       return !bill.paid && billDueDate > today && billDueDate <= nextWeek;
+    });
+  },
+  
+  getBillsDueWithinDays: (bills: Bill[], days: number) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const cutoffDate = new Date(today);
+    cutoffDate.setDate(today.getDate() + days);
+    
+    return bills.filter(bill => {
+      const billDueDate = new Date(bill.dueDate);
+      billDueDate.setHours(0, 0, 0, 0);
+      return !bill.paid && billDueDate > today && billDueDate <= cutoffDate;
     });
   }
 };

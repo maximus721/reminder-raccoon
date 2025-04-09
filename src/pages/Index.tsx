@@ -10,7 +10,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Calendar,
-  Clock
+  Clock,
+  AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Header from '@/components/Header';
@@ -22,11 +23,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 
 const Index = () => {
-  const { accounts, bills, totalBalance, upcomingBills, dueTodayBills } = useFinance();
+  const { accounts, bills, totalBalance, upcomingBills, dueTodayBills, urgentBills } = useFinance();
 
-  const nextBill = [...upcomingBills, ...dueTodayBills].sort((a, b) => 
+  const nextBill = [...dueTodayBills, ...upcomingBills].sort((a, b) => 
     new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()
   )[0];
+
+  // Helper function to check if a bill is in the urgent list
+  const isUrgent = (billId: string) => {
+    return urgentBills.some(bill => bill.id === billId);
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -82,15 +88,30 @@ const Index = () => {
                   </CardContent>
                 </Card>
                 
-                <Card className="bg-card">
+                <Card className={cn(
+                  "bg-card",
+                  urgentBills.length > 0 && "border-red-500"
+                )}>
                   <CardContent className="p-5">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-sm font-medium text-muted-foreground">Due Today</p>
-                        <h3 className="text-2xl font-bold mt-1">{dueTodayBills.length}</h3>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          {urgentBills.length > 0 ? "Urgent Bills" : "Due Today"}
+                        </p>
+                        <h3 className={cn(
+                          "text-2xl font-bold mt-1",
+                          urgentBills.length > 0 && "text-red-500"
+                        )}>
+                          {urgentBills.length > 0 ? urgentBills.length : dueTodayBills.length}
+                        </h3>
                       </div>
-                      <div className="h-10 w-10 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
-                        <Clock size={20} />
+                      <div className={cn(
+                        "h-10 w-10 rounded-full flex items-center justify-center",
+                        urgentBills.length > 0 
+                          ? "bg-red-500/10 text-red-500" 
+                          : "bg-amber-500/10 text-amber-500"
+                      )}>
+                        {urgentBills.length > 0 ? <AlertCircle size={20} /> : <Clock size={20} />}
                       </div>
                     </div>
                   </CardContent>
@@ -156,24 +177,52 @@ const Index = () => {
                           {upcomingBills.map(bill => (
                             <div 
                               key={bill.id} 
-                              className="flex justify-between items-center p-3 rounded-md bg-card border"
+                              className={cn(
+                                "flex justify-between items-center p-3 rounded-md border",
+                                isUrgent(bill.id) 
+                                  ? "bg-red-500/10 border-red-500/20" 
+                                  : "bg-card border"
+                              )}
                             >
                               <div className="flex items-center space-x-3">
-                                <div className="rounded-full bg-primary/10 text-primary h-8 w-8 flex items-center justify-center">
-                                  <Calendar size={16} />
+                                <div className={cn(
+                                  "rounded-full h-8 w-8 flex items-center justify-center",
+                                  isUrgent(bill.id)
+                                    ? "bg-red-500/20 text-red-500"
+                                    : "bg-primary/10 text-primary"
+                                )}>
+                                  {isUrgent(bill.id) ? <AlertCircle size={16} /> : <Calendar size={16} />}
                                 </div>
                                 <div>
-                                  <p className="font-medium">{bill.name}</p>
+                                  <p className={cn(
+                                    "font-medium",
+                                    isUrgent(bill.id) && "text-red-500"
+                                  )}>
+                                    {bill.name}
+                                    {isUrgent(bill.id) && (
+                                      <span className="ml-2 text-xs bg-red-500 text-white px-1.5 py-0.5 rounded-full">
+                                        Urgent
+                                      </span>
+                                    )}
+                                  </p>
                                   <p className="text-sm text-muted-foreground">
                                     Due {format(new Date(bill.dueDate), 'MMM d')}
                                   </p>
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="font-semibold">${bill.amount.toFixed(2)}</p>
+                                <p className={cn(
+                                  "font-semibold",
+                                  isUrgent(bill.id) && "text-red-500"
+                                )}>
+                                  ${bill.amount.toFixed(2)}
+                                </p>
                                 <Link
                                   to="/bills"
-                                  className="text-xs text-primary hover:underline"
+                                  className={cn(
+                                    "text-xs hover:underline",
+                                    isUrgent(bill.id) ? "text-red-500" : "text-primary"
+                                  )}
                                 >
                                   View
                                 </Link>
@@ -297,20 +346,40 @@ const Index = () => {
               </Card>
               
               {nextBill && (
-                <Card className="bg-card overflow-hidden border-t-amber-500">
-                  <div className="bg-amber-500 text-white px-4 py-1 text-xs font-medium">
-                    Next Payment
+                <Card className={cn(
+                  "bg-card overflow-hidden",
+                  isUrgent(nextBill.id) ? "border-t-red-500" : "border-t-amber-500"
+                )}>
+                  <div className={cn(
+                    "text-white px-4 py-1 text-xs font-medium",
+                    isUrgent(nextBill.id) ? "bg-red-500" : "bg-amber-500"
+                  )}>
+                    {isUrgent(nextBill.id) ? "Urgent Payment" : "Next Payment"}
                   </div>
                   <CardContent className="p-4">
                     <div className="mb-3">
-                      <h3 className="font-semibold text-lg">{nextBill.name}</h3>
+                      <h3 className={cn(
+                        "font-semibold text-lg",
+                        isUrgent(nextBill.id) && "text-red-500"
+                      )}>
+                        {nextBill.name}
+                      </h3>
                       <p className="text-muted-foreground text-sm">
                         Due {format(new Date(nextBill.dueDate), 'EEEE, MMMM d')}
                       </p>
                     </div>
                     <div className="flex justify-between items-center mt-4">
-                      <span className="text-xl font-bold">${nextBill.amount.toFixed(2)}</span>
-                      <Button size="sm" asChild>
+                      <span className={cn(
+                        "text-xl font-bold",
+                        isUrgent(nextBill.id) && "text-red-500"
+                      )}>
+                        ${nextBill.amount.toFixed(2)}
+                      </span>
+                      <Button 
+                        size="sm" 
+                        asChild
+                        variant={isUrgent(nextBill.id) ? "destructive" : "default"}
+                      >
                         <Link to="/bills">Pay Now</Link>
                       </Button>
                     </div>

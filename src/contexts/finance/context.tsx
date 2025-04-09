@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -29,6 +28,7 @@ type FinanceContextType = {
   totalBalance: number;
   upcomingBills: Bill[];
   dueTodayBills: Bill[];
+  urgentBills: Bill[];
   addBill: (bill: Omit<Bill, 'id'>) => Promise<void>;
   updateBill: (id: string, bill: Partial<Bill>) => Promise<void>;
   deleteBill: (id: string) => Promise<void>;
@@ -179,6 +179,9 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Get upcoming bills
   const upcomingBills = remindersService.getUpcomingBills(bills);
 
+  // Get urgent bills due within 5 days
+  const urgentBills = remindersService.getBillsDueWithinDays(bills, 5);
+
   // Get recent transactions for an account
   const recentTransactions = (accountId: string, limit: number = 5): Transaction[] => {
     return transactionsService.getRecentTransactions(transactions, accountId, limit);
@@ -314,6 +317,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     totalBalance,
     upcomingBills,
     dueTodayBills,
+    urgentBills,
     addBill,
     updateBill,
     deleteBill,
