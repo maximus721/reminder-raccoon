@@ -158,19 +158,22 @@ export const snoozeBill = async (user: User | null, id: string, days: number): P
     // First get the current bill to save the original due date
     const { data: currentBill, error: fetchError } = await supabase
       .from('bills')
-      .select('due_date, original_due_date')
+      .select('*')
       .eq('id', id)
       .single();
       
     if (fetchError) throw fetchError;
     
+    // Ensure we're working with the right types
+    const billData = currentBill as Bills;
+    
     // Calculate the new due date
-    const currentDueDate = new Date(currentBill.due_date);
+    const currentDueDate = new Date(billData.due_date);
     const newDueDate = new Date(currentDueDate);
     newDueDate.setDate(currentDueDate.getDate() + days);
     
     // Save the original due date if this is the first time snoozing
-    const originalDueDate = (currentBill as any).original_due_date || currentBill.due_date;
+    const originalDueDate = (billData as any).original_due_date || billData.due_date;
     
     const { error: updateError } = await supabase
       .from('bills')
@@ -199,7 +202,7 @@ export const calculatePastDueDays = async (user: User | null): Promise<void> => 
     // Get all unpaid bills
     const { data: unpaidBills, error: fetchError } = await supabase
       .from('bills')
-      .select('id, due_date')
+      .select('*')
       .eq('user_id', user.id)
       .eq('paid', false);
       
@@ -217,10 +220,12 @@ export const calculatePastDueDays = async (user: User | null): Promise<void> => 
       if (dueDate < today) {
         const pastDueDays = Math.floor((today.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
         
-        // Update the bill with days past due
+        // Update the bill with days past due using type assertion for the database schema
         await supabase
           .from('bills')
-          .update({ past_due_days: pastDueDays })
+          .update({ 
+            past_due_days: pastDueDays 
+          } as any)
           .eq('id', bill.id);
       }
     }
