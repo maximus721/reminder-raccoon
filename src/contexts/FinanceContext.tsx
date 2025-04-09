@@ -1,8 +1,7 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { supabase, fromTable } from '@/lib/supabase';
 import { useAuth } from './AuthContext';
 import { 
   Account, 
@@ -120,7 +119,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         
         setAccounts(transformedAccounts);
         
-        // Check if savings_goals table exists and get data
         try {
           const { data: tableExistsData, error: checkError } = await supabase
             .rpc('check_if_table_exists', { table_name: 'savings_goals' });
@@ -128,7 +126,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const tableExists = tableExistsData;
           
           if (tableExists) {
-            // Use a direct fetch approach instead of the Supabase client
             const response = await fetch(`https://aqqxoahqxnxsmtjcgwax.supabase.co/rest/v1/savings_goals?user_id=eq.${user.id}`, {
               headers: {
                 'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcXhvYWhxeG54c210amNnd2F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MzAwNzEsImV4cCI6MjA1ODUwNjA3MX0.levhY4ChaLa7ooowuTNUrCiqdz8Jr24usfTrlvWWszE',
@@ -649,7 +646,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      // First, check if the savings_goals table exists
       const { data: savingsGoalsTableExists, error: checkError } = await supabase
         .rpc('check_if_table_exists', { table_name: 'savings_goals' });
         
@@ -659,7 +655,6 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return;
       }
       
-      // Now insert the new goal using the REST API approach with hardcoded URL and key
       const goalToInsert = {
         user_id: user.id,
         name: goal.name,

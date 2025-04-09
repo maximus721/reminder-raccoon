@@ -15,6 +15,11 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   }
 });
 
+// Helper function for type assertions when accessing tables not in the type definition
+export function fromTable(tableName: string) {
+  return supabase.from(tableName as any);
+}
+
 // Database types
 export type Bills = Database['public']['Tables']['bills']['Row'];
 export type Accounts = Database['public']['Tables']['accounts']['Row'];
