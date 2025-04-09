@@ -128,11 +128,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
           const tableExists = tableExistsData;
           
           if (tableExists) {
-            // Use a more generic approach to query the savings_goals table
-            const response = await fetch(`${supabase.supabaseUrl}/rest/v1/savings_goals?user_id=eq.${user.id}`, {
+            // Use a direct fetch approach instead of the Supabase client
+            const response = await fetch(`https://aqqxoahqxnxsmtjcgwax.supabase.co/rest/v1/savings_goals?user_id=eq.${user.id}`, {
               headers: {
-                'apikey': supabase.supabaseKey,
-                'Authorization': `Bearer ${supabase.supabaseKey}`,
+                'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcXhvYWhxeG54c210amNnd2F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MzAwNzEsImV4cCI6MjA1ODUwNjA3MX0.levhY4ChaLa7ooowuTNUrCiqdz8Jr24usfTrlvWWszE',
+                'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcXhvYWhxeG54c210amNnd2F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MzAwNzEsImV4cCI6MjA1ODUwNjA3MX0.levhY4ChaLa7ooowuTNUrCiqdz8Jr24usfTrlvWWszE`,
                 'Content-Type': 'application/json',
               },
             });
@@ -659,7 +659,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         return;
       }
       
-      // Now insert the new goal using the REST API approach
+      // Now insert the new goal using the REST API approach with hardcoded URL and key
       const goalToInsert = {
         user_id: user.id,
         name: goal.name,
@@ -672,11 +672,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
         account_id: goal.accountId
       };
       
-      const response = await fetch(`${supabase.supabaseUrl}/rest/v1/savings_goals`, {
+      const response = await fetch(`https://aqqxoahqxnxsmtjcgwax.supabase.co/rest/v1/savings_goals`, {
         method: 'POST',
         headers: {
-          'apikey': supabase.supabaseKey,
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcXhvYWhxeG54c210amNnd2F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MzAwNzEsImV4cCI6MjA1ODUwNjA3MX0.levhY4ChaLa7ooowuTNUrCiqdz8Jr24usfTrlvWWszE',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcXhvYWhxeG54c210amNnd2F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MzAwNzEsImV4cCI6MjA1ODUwNjA3MX0.levhY4ChaLa7ooowuTNUrCiqdz8Jr24usfTrlvWWszE`,
           'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
@@ -728,11 +728,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
       if ('status' in updatedFields) dbUpdates.status = updatedFields.status;
       if ('accountId' in updatedFields) dbUpdates.account_id = updatedFields.accountId;
       
-      const response = await fetch(`${supabase.supabaseUrl}/rest/v1/savings_goals?id=eq.${id}`, {
+      const response = await fetch(`https://aqqxoahqxnxsmtjcgwax.supabase.co/rest/v1/savings_goals?id=eq.${id}`, {
         method: 'PATCH',
         headers: {
-          'apikey': supabase.supabaseKey,
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcXhvYWhxeG54c210amNnd2F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MzAwNzEsImV4cCI6MjA1ODUwNjA3MX0.levhY4ChaLa7ooowuTNUrCiqdz8Jr24usfTrlvWWszE',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcXhvYWhxeG54c210amNnd2F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MzAwNzEsImV4cCI6MjA1ODUwNjA3MX0.levhY4ChaLa7ooowuTNUrCiqdz8Jr24usfTrlvWWszE`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(dbUpdates)
@@ -762,11 +762,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
 
     try {
-      const response = await fetch(`${supabase.supabaseUrl}/rest/v1/savings_goals?id=eq.${id}`, {
+      const response = await fetch(`https://aqqxoahqxnxsmtjcgwax.supabase.co/rest/v1/savings_goals?id=eq.${id}`, {
         method: 'DELETE',
         headers: {
-          'apikey': supabase.supabaseKey,
-          'Authorization': `Bearer ${supabase.supabaseKey}`,
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcXhvYWhxeG54c210amNnd2F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MzAwNzEsImV4cCI6MjA1ODUwNjA3MX0.levhY4ChaLa7ooowuTNUrCiqdz8Jr24usfTrlvWWszE',
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxcXhvYWhxeG54c210amNnd2F4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MzAwNzEsImV4cCI6MjA1ODUwNjA3MX0.levhY4ChaLa7ooowuTNUrCiqdz8Jr24usfTrlvWWszE`,
           'Content-Type': 'application/json',
         }
       });
