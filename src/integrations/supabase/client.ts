@@ -15,3 +15,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 export function fromTable(tableName: string) {
   return supabase.from(tableName as any);
 }
+
+// Define types for our new bill fields
+export type Bills = Database['public']['Tables']['bills']['Row'] & {
+  snoozed_until?: string | null;
+  original_due_date?: string | null;
+  past_due_days?: number;
+};

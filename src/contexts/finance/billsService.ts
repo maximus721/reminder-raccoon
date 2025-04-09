@@ -1,6 +1,6 @@
 
 import { toast } from 'sonner';
-import { supabase } from '@/lib/supabase';
+import { supabase, Bills } from '@/lib/supabase';
 import { Bill } from './types';
 import { User } from '@supabase/supabase-js';
 
@@ -22,9 +22,9 @@ export const fetchBills = async (userId: string): Promise<Bill[]> => {
     category: bill.category,
     notes: bill.notes,
     interest: bill.interest,
-    snoozedUntil: bill.snoozed_until || null,
-    originalDueDate: bill.original_due_date || bill.due_date,
-    pastDueDays: bill.past_due_days || 0
+    snoozedUntil: (bill as any).snoozed_until || null,
+    originalDueDate: (bill as any).original_due_date || bill.due_date,
+    pastDueDays: (bill as any).past_due_days || 0
   }));
   
   return transformedBills;
@@ -68,9 +68,9 @@ export const addBill = async (user: User | null, bill: Omit<Bill, 'id'>): Promis
         category: data[0].category,
         notes: data[0].notes,
         interest: data[0].interest,
-        snoozedUntil: data[0].snoozed_until || null,
-        originalDueDate: data[0].original_due_date || data[0].due_date,
-        pastDueDays: data[0].past_due_days || 0
+        snoozedUntil: (data[0] as any).snoozed_until || null,
+        originalDueDate: (data[0] as any).original_due_date || data[0].due_date,
+        pastDueDays: (data[0] as any).past_due_days || 0
       };
       
       toast.success('Bill added successfully');
@@ -170,7 +170,7 @@ export const snoozeBill = async (user: User | null, id: string, days: number): P
     newDueDate.setDate(currentDueDate.getDate() + days);
     
     // Save the original due date if this is the first time snoozing
-    const originalDueDate = currentBill.original_due_date || currentBill.due_date;
+    const originalDueDate = (currentBill as any).original_due_date || currentBill.due_date;
     
     const { error: updateError } = await supabase
       .from('bills')

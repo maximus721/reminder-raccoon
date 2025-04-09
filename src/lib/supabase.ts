@@ -20,8 +20,12 @@ export function fromTable(tableName: string) {
   return supabase.from(tableName as any);
 }
 
-// Database types
-export type Bills = Database['public']['Tables']['bills']['Row'];
+// Enhanced Database types for bills with new fields
+export type Bills = Database['public']['Tables']['bills']['Row'] & {
+  snoozed_until?: string | null;
+  original_due_date?: string | null;
+  past_due_days?: number;
+};
 export type Accounts = Database['public']['Tables']['accounts']['Row'];
 
 // Add TypeScript interface for the check_if_table_exists RPC function
