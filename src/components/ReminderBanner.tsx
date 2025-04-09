@@ -109,7 +109,7 @@ const ReminderBanner = () => {
                         <p className="text-xs text-muted-foreground">${bill.amount.toFixed(2)}</p>
                         <span className="text-xs text-muted-foreground">•</span>
                         <p className="text-xs text-muted-foreground flex items-center">
-                          <AlarmClock size={12} className="mr-0.5" /> {/* Changed from Snooze to AlarmClock */}
+                          <AlarmClock size={12} className="mr-0.5" />
                           Until {format(new Date(bill.snoozedUntil!), 'MMM d')}
                         </p>
                       </div>
@@ -207,7 +207,7 @@ const ReminderBanner = () => {
                           : "bg-amber-500/20 text-amber-500"
                     )}>
                       {bill.snoozedUntil
-                        ? <AlarmClock size={14} /> {/* Changed from Snooze to AlarmClock */}
+                        ? <AlarmClock size={14} />
                         : isUrgent(bill.id) 
                           ? <AlertCircle size={14} /> 
                           : <Calendar size={14} />
