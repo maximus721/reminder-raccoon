@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { format } from 'date-fns';
 import { 
@@ -12,7 +11,8 @@ import {
   Clock,
   CalendarX,
   CalendarCheck,
-  AlarmClock
+  AlarmClock,
+  RotateCcw
 } from 'lucide-react';
 import { Bill, useFinance } from '@/contexts/FinanceContext';
 import { 
@@ -51,9 +51,8 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 };
 
 const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
-  const { deleteBill, markBillAsPaid, snoozeBill, isUrgentBill } = useFinance();
+  const { deleteBill, markBillAsPaid, markBillAsUnpaid, snoozeBill, isUrgentBill } = useFinance();
 
-  // Determine status
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const dueDate = new Date(bill.dueDate);
@@ -88,7 +87,7 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
 
   if (isPaid) StatusIcon = CalendarCheck;
   else if (isOverdue) StatusIcon = CalendarX;
-  else if (isSnoozed) StatusIcon = AlarmClock; // Changed from Snooze to AlarmClock
+  else if (isSnoozed) StatusIcon = AlarmClock;
   else if (isUrgent) StatusIcon = AlertCircle;
   else if (isDueToday) StatusIcon = Clock;
 
@@ -123,7 +122,7 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
                 )}
                 {isSnoozed && (
                   <span className="ml-2 text-[10px] bg-indigo-500 text-white px-1 py-0.5 rounded-full flex items-center">
-                    <AlarmClock size={8} className="mr-0.5" /> {/* Changed from Snooze to AlarmClock */}
+                    <AlarmClock size={8} className="mr-0.5" />
                     Snoozed
                   </span>
                 )}
@@ -191,10 +190,17 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
                   </DropdownMenuItem>
                 )}
                 
+                {bill.paid && (
+                  <DropdownMenuItem onClick={() => markBillAsUnpaid(bill.id)}>
+                    <RotateCcw size={14} className="mr-2" />
+                    Mark as Unpaid
+                  </DropdownMenuItem>
+                )}
+                
                 {!bill.paid && (
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
-                      <AlarmClock size={14} className="mr-2" /> {/* Changed from Snooze to AlarmClock */}
+                      <AlarmClock size={14} className="mr-2" />
                       Snooze Bill
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
@@ -217,7 +223,7 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
                   </DropdownMenuSub>
                 )}
                 
-                {!bill.paid && <DropdownMenuSeparator />}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onEdit(bill)}>
                   <Pencil size={14} className="mr-2" />
                   Edit

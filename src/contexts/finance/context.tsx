@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -38,6 +37,7 @@ type FinanceContextType = {
   updateAccount: (id: string, account: Partial<Account>) => Promise<void>;
   deleteAccount: (id: string) => Promise<void>;
   markBillAsPaid: (id: string) => Promise<void>;
+  markBillAsUnpaid: (id: string) => Promise<void>;
   snoozeBill: (id: string, days: number) => Promise<void>;
   isUrgentBill: (bill: Bill) => boolean;
   getTransactions: (accountId: string) => Promise<Transaction[]>;
@@ -334,6 +334,11 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     await updateBill(id, { paid: true });
   };
 
+  // Mark bill as unpaid
+  const markBillAsUnpaid = async (id: string) => {
+    await updateBill(id, { paid: false });
+  };
+
   const value = {
     bills,
     accounts,
@@ -351,6 +356,7 @@ export const FinanceProvider: React.FC<{ children: React.ReactNode }> = ({ child
     updateAccount,
     deleteAccount,
     markBillAsPaid,
+    markBillAsUnpaid,
     snoozeBill,
     isUrgentBill,
     getTransactions,
