@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageSquarePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -27,6 +27,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
+import useLocalStorage from "@/hooks/useLocalStorage";
 
 const feedbackFormSchema = z.object({
   name: z.string().min(2, {
@@ -46,6 +48,8 @@ const FeedbackBanner = () => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const [sessionPopupShown, setSessionPopupShown] = useLocalStorage('feedback-popup-shown', false);
+  const isMobile = useIsMobile();
   
   const form = useForm<FeedbackFormValues>({
     resolver: zodResolver(feedbackFormSchema),
@@ -55,6 +59,19 @@ const FeedbackBanner = () => {
       feedback: "",
     },
   });
+  
+  useEffect(() => {
+    // Show popup randomly during session (if not already shown this session)
+    if (!sessionPopupShown) {
+      const randomDelay = Math.floor(Math.random() * (180000 - 60000) + 60000); // Between 1-3 minutes
+      const timer = setTimeout(() => {
+        setDismissed(false); // Make sure it's visible
+        setSessionPopupShown(true); // Mark as shown for this session
+      }, randomDelay);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [sessionPopupShown, setSessionPopupShown]);
   
   const onSubmit = async (data: FeedbackFormValues) => {
     setLoading(true);
@@ -82,7 +99,7 @@ const FeedbackBanner = () => {
       // Fallback method using mailto
       const subject = encodeURIComponent("App Feedback");
       const body = encodeURIComponent(`Name: ${data.name}\nEmail: ${data.email}\n\nFeedback:\n${data.feedback}`);
-      window.location.href = `mailto:feedback@example.com?subject=${subject}&body=${body}`;
+      window.location.href = `mailto:robby72174@gmail.com?subject=${subject}&body=${body}`;
       
       toast.success("Opening email client to send feedback. Thank you!");
       form.reset();
@@ -98,21 +115,24 @@ const FeedbackBanner = () => {
   
   return (
     <div className="fixed top-4 left-0 right-0 z-50 flex justify-center">
-      <Alert className="max-w-3xl mx-4 shadow-lg border-primary/20 bg-primary/5 animate-slide-up">
-        <div className="flex justify-between items-center">
-          <AlertDescription className="text-sm flex-1">
+      <Alert className={`
+        max-w-3xl mx-4 shadow-lg border-primary/20 bg-primary/5 animate-slide-up
+        ${isMobile ? 'flex flex-col p-3' : ''}
+      `}>
+        <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex justify-between items-center'}`}>
+          <AlertDescription className={`text-sm ${isMobile ? 'text-center mb-2' : 'flex-1'}`}>
             <span className="font-medium">Thank you for helping test this app.</span> Feel free to request features and give feedback!
           </AlertDescription>
           
-          <div className="flex items-center gap-2">
+          <div className={`${isMobile ? 'flex justify-center w-full' : 'flex items-center gap-2'}`}>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="h-8">
+                <Button size={isMobile ? "default" : "sm"} className={isMobile ? "w-full mb-1" : "h-8"}>
                   <MessageSquarePlus className="h-4 w-4 mr-1" />
                   Send Feedback
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-[425px] max-w-[90vw] p-4">
                 <DialogHeader>
                   <DialogTitle>Send Feedback</DialogTitle>
                   <DialogDescription>
@@ -168,7 +188,7 @@ const FeedbackBanner = () => {
                       )}
                     />
                     <DialogFooter>
-                      <Button type="submit" disabled={loading}>
+                      <Button type="submit" disabled={loading} className={isMobile ? "w-full" : ""}>
                         {loading ? "Sending..." : "Submit Feedback"}
                       </Button>
                     </DialogFooter>

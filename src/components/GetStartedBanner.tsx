@@ -11,10 +11,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const GetStartedBanner = () => {
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
+  const isMobile = useIsMobile();
   
   if (dismissed) {
     return null;
@@ -22,21 +24,24 @@ const GetStartedBanner = () => {
   
   return (
     <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center">
-      <Alert className="max-w-3xl mx-4 shadow-lg border-primary/20 bg-primary/5 animate-slide-up">
-        <div className="flex justify-between items-center">
-          <AlertDescription className="text-sm flex-1">
+      <Alert className={`
+        max-w-3xl mx-4 shadow-lg border-primary/20 bg-primary/5 animate-slide-up
+        ${isMobile ? 'flex flex-col p-3' : ''}
+      `}>
+        <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex justify-between items-center'}`}>
+          <AlertDescription className={`text-sm ${isMobile ? 'text-center mb-2' : 'flex-1'}`}>
             <span className="font-medium">🚀 New here?</span> Check out our quick start guide to supercharge your financial journey!
           </AlertDescription>
           
-          <div className="flex items-center gap-2">
+          <div className={`${isMobile ? 'flex justify-center w-full' : 'flex items-center gap-2'}`}>
             <Dialog open={open} onOpenChange={setOpen}>
               <DialogTrigger asChild>
-                <Button size="sm" className="h-8">
+                <Button size={isMobile ? "default" : "sm"} className={isMobile ? "w-full mb-1" : "h-8"}>
                   <BookOpen className="h-4 w-4 mr-1" />
                   Getting Started
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[650px] max-h-[80vh]">
+              <DialogContent className="sm:max-w-[650px] max-h-[80vh] max-w-[90vw] p-4">
                 <DialogHeader>
                   <DialogTitle className="text-xl">Welcome to Fintrack - Your Financial Companion</DialogTitle>
                 </DialogHeader>
@@ -128,7 +133,7 @@ const GetStartedBanner = () => {
                   </div>
                 </ScrollArea>
                 <div className="flex justify-center mt-4">
-                  <Button onClick={() => setOpen(false)}>Get Started</Button>
+                  <Button onClick={() => setOpen(false)} className={isMobile ? "w-full" : ""}>Get Started</Button>
                 </div>
               </DialogContent>
             </Dialog>
