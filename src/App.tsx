@@ -16,6 +16,7 @@ import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import { useAuth } from "./contexts/AuthContext";
 import FeedbackBanner from "./components/FeedbackBanner";
+import GetStartedBanner from "./components/GetStartedBanner";
 
 const queryClient = new QueryClient();
 
@@ -93,6 +94,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <FeedbackBanner />
+            <GetStartedBanner />
             <AppRoutes />
           </BrowserRouter>
         </FinanceProvider>
