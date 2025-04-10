@@ -15,6 +15,7 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import { useAuth } from "./contexts/AuthContext";
+import FeedbackBanner from "./components/FeedbackBanner";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +92,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <FeedbackBanner />
             <AppRoutes />
           </BrowserRouter>
         </FinanceProvider>
