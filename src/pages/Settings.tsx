@@ -13,6 +13,10 @@ const Settings = () => {
   const { theme, setTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
 
+  const handleThemeChange = (value: string) => {
+    setTheme(value as 'light' | 'dark' | 'system');
+  };
+
   return (
     <Layout>
       <div className="container max-w-4xl mx-auto pt-20 p-4">
@@ -53,22 +57,25 @@ const Settings = () => {
           <CardContent>
             <RadioGroup 
               value={theme} 
-              onValueChange={(value) => setTheme(value as 'light' | 'dark' | 'system')}
+              onValueChange={handleThemeChange}
               className="grid grid-cols-1 md:grid-cols-3 gap-4"
             >
-              <div className="flex flex-col items-center space-y-2 border rounded-md p-4 hover:bg-accent">
+              <div className={`flex flex-col items-center space-y-2 border rounded-md p-4 hover:bg-accent cursor-pointer ${theme === 'light' ? 'bg-accent/50' : ''}`} 
+                   onClick={() => handleThemeChange('light')}>
                 <RadioGroupItem value="light" id="light" className="sr-only" />
                 <Sun className="h-6 w-6" />
                 <Label htmlFor="light" className="cursor-pointer">{t('light')}</Label>
               </div>
 
-              <div className="flex flex-col items-center space-y-2 border rounded-md p-4 hover:bg-accent">
+              <div className={`flex flex-col items-center space-y-2 border rounded-md p-4 hover:bg-accent cursor-pointer ${theme === 'dark' ? 'bg-accent/50' : ''}`}
+                   onClick={() => handleThemeChange('dark')}>
                 <RadioGroupItem value="dark" id="dark" className="sr-only" />
                 <Moon className="h-6 w-6" />
                 <Label htmlFor="dark" className="cursor-pointer">{t('dark')}</Label>
               </div>
 
-              <div className="flex flex-col items-center space-y-2 border rounded-md p-4 hover:bg-accent">
+              <div className={`flex flex-col items-center space-y-2 border rounded-md p-4 hover:bg-accent cursor-pointer ${theme === 'system' ? 'bg-accent/50' : ''}`}
+                   onClick={() => handleThemeChange('system')}>
                 <RadioGroupItem value="system" id="system" className="sr-only" />
                 <Monitor className="h-6 w-6" />
                 <Label htmlFor="system" className="cursor-pointer">{t('system')}</Label>
