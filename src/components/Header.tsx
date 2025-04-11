@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Home, Receipt, Wallet, Calendar, Target } from 'lucide-react';
+import { Menu, X, Home, Receipt, Wallet, Calendar, Target, Settings, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -14,22 +15,31 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useLanguage } from '@/i18n/context';
+import { useTheme } from '@/theme/ThemeContext';
+import { Sun, Moon } from 'lucide-react';
 
 const Header = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
+  const { t } = useLanguage();
+  const { theme, setTheme, resolvedTheme } = useTheme();
 
   const navLinks = [
-    { name: 'Dashboard', path: '/', icon: <Home className="h-5 w-5 mr-2" /> },
-    { name: 'Bills', path: '/bills', icon: <Receipt className="h-5 w-5 mr-2" /> },
-    { name: 'Accounts', path: '/accounts', icon: <Wallet className="h-5 w-5 mr-2" /> },
-    { name: 'Calendar', path: '/calendar', icon: <Calendar className="h-5 w-5 mr-2" /> },
-    { name: 'Payment Goals', path: '/payment-goals', icon: <Target className="h-5 w-5 mr-2" /> },
+    { name: t('dashboard'), path: '/', icon: <Home className="h-5 w-5 mr-2" /> },
+    { name: t('bills'), path: '/bills', icon: <Receipt className="h-5 w-5 mr-2" /> },
+    { name: t('accounts'), path: '/accounts', icon: <Wallet className="h-5 w-5 mr-2" /> },
+    { name: t('calendar'), path: '/calendar', icon: <Calendar className="h-5 w-5 mr-2" /> },
+    { name: t('paymentGoals'), path: '/payment-goals', icon: <Target className="h-5 w-5 mr-2" /> },
   ];
 
   const userInitial = user?.email ? user.email[0].toUpperCase() : '?';
+  
+  const toggleTheme = () => {
+    setTheme(resolvedTheme === 'light' ? 'dark' : 'light');
+  };
 
   return (
     <header className="fixed w-full bg-background z-10 border-b">
@@ -60,6 +70,19 @@ const Header = () => {
         )}
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            title={resolvedTheme === 'light' ? t('dark') : t('light')}
+          >
+            {resolvedTheme === 'light' ? (
+              <Moon className="h-5 w-5" />
+            ) : (
+              <Sun className="h-5 w-5" />
+            )}
+          </Button>
+
           {user && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -73,7 +96,7 @@ const Header = () => {
               <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">Account</p>
+                    <p className="text-sm font-medium leading-none">{t('accountSettings')}</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user.email}
                     </p>
@@ -81,13 +104,20 @@ const Header = () => {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <Link to="/accounts">My Accounts</Link>
+                  <Link to="/accounts">{t('accounts')}</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link to="/bills">My Bills</Link>
+                  <Link to="/bills">{t('bills')}</Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut}>Log out</DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings">
+                    <Settings className="h-4 w-4 mr-2" />
+                    {t('settings')}
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut}>{t('signOut')}</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -129,6 +159,18 @@ const Header = () => {
                         {link.name}
                       </Link>
                     ))}
+                    <Link
+                      to="/settings"
+                      className={`flex items-center px-4 py-2 text-base font-medium transition-colors hover:bg-muted ${
+                        location.pathname === '/settings'
+                          ? 'bg-muted text-foreground'
+                          : 'text-muted-foreground'
+                      }`}
+                      onClick={() => setOpen(false)}
+                    >
+                      <Settings className="h-5 w-5 mr-2" />
+                      {t('settings')}
+                    </Link>
                   </nav>
                 </div>
               </SheetContent>

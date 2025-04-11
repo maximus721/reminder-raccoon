@@ -1,6 +1,7 @@
 
 // This is a mock API handler that would typically be implemented as a serverless function
 // In a real application, this would be replaced with an actual backend service
+import { toast } from "sonner";
 
 export async function sendFeedback(data: {
   name: string;
@@ -17,6 +18,26 @@ export async function sendFeedback(data: {
   
   // In a real implementation, this would send an email to robby72174@gmail.com
   // but the email is kept server-side and not exposed to the frontend
+  
+  // For this mock implementation, we'll just log the data
+  console.log(`
+    The feedback would be sent to robby72174@gmail.com:
+    From: ${data.name} (${data.email})
+    Message: ${data.feedback}
+  `);
+  
+  // In a real application, you would use an email service like:
+  // - Resend (https://resend.com)
+  // - SendGrid (https://sendgrid.com)
+  // - Mailgun (https://www.mailgun.com)
+  // - AWS SES (https://aws.amazon.com/ses/)
+  
+  // To implement this for real, you would need:
+  // 1. A server-side API endpoint (like a serverless function)
+  // 2. API keys for the email service (stored securely on the server)
+  // 3. Email templates
+  
+  toast.info("In a real app, this would send an email to the app owner. For now, we're just logging it to the console.");
   
   return { success: true };
 }

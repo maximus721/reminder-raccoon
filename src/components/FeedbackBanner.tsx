@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { MessageSquarePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -28,6 +28,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import useLocalStorage from "@/hooks/useLocalStorage";
+import { useLanguage } from "@/i18n/context";
 
 const feedbackFormSchema = z.object({
   name: z.string().min(2, {
@@ -49,6 +50,7 @@ const FeedbackBanner = () => {
   const [dismissed, setDismissed] = useState(false);
   const [sessionPopupShown, setSessionPopupShown] = useLocalStorage('feedback-popup-shown', false);
   const isMobile = useIsMobile();
+  const { t } = useLanguage();
   
   const form = useForm<FeedbackFormValues>({
     resolver: zodResolver(feedbackFormSchema),
@@ -87,7 +89,7 @@ const FeedbackBanner = () => {
         throw new Error("Failed to send feedback");
       }
       
-      toast.success("Feedback sent successfully! Thank you for your input.");
+      toast.success(t('feedbackSuccess'));
       form.reset();
       setOpen(false);
     } catch (error) {
@@ -117,7 +119,7 @@ const FeedbackBanner = () => {
       `}>
         <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex justify-between items-center'}`}>
           <AlertDescription className={`text-sm text-foreground ${isMobile ? 'text-center mb-2' : 'flex-1'}`}>
-            <span className="font-medium">Thank you for helping test this app.</span> Feel free to request features and give feedback!
+            <span className="font-medium">{t('thankYou')}</span> {t('requestFeatures')}
           </AlertDescription>
           
           <div className={`${isMobile ? 'flex justify-center w-full' : 'flex items-center gap-2'}`}>
@@ -125,7 +127,7 @@ const FeedbackBanner = () => {
               <DialogTrigger asChild>
                 <Button size={isMobile ? "default" : "sm"} className={isMobile ? "w-full mb-1" : "h-8"}>
                   <MessageSquarePlus className="h-4 w-4 mr-1" />
-                  Send Feedback
+                  {t('sendFeedback')}
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px] max-w-[90vw] p-4">
@@ -136,9 +138,9 @@ const FeedbackBanner = () => {
                       name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Name</FormLabel>
+                          <FormLabel>{t('yourName')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Your name" {...field} />
+                            <Input placeholder={t('yourName')} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -149,9 +151,9 @@ const FeedbackBanner = () => {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Email</FormLabel>
+                          <FormLabel>{t('yourEmail')}</FormLabel>
                           <FormControl>
-                            <Input placeholder="Your email" type="email" {...field} />
+                            <Input placeholder={t('yourEmail')} type="email" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -162,16 +164,16 @@ const FeedbackBanner = () => {
                       name="feedback"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Feedback</FormLabel>
+                          <FormLabel>{t('feedback')}</FormLabel>
                           <FormControl>
                             <Textarea 
-                              placeholder="Share your thoughts, feature requests, or report issues..."
+                              placeholder={t('feedbackPlaceholder')}
                               className="min-h-[120px]"
                               {...field} 
                             />
                           </FormControl>
                           <FormDescription>
-                            Your feedback will help improve the app for everyone.
+                            {t('feedbackHelp')}
                           </FormDescription>
                           <FormMessage />
                         </FormItem>
@@ -179,7 +181,7 @@ const FeedbackBanner = () => {
                     />
                     <DialogFooter>
                       <Button type="submit" disabled={loading} className={isMobile ? "w-full" : ""}>
-                        {loading ? "Sending..." : "Submit Feedback"}
+                        {loading ? t('submitting') : t('submit')}
                       </Button>
                     </DialogFooter>
                   </form>

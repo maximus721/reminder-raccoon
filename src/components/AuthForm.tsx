@@ -26,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { InfoIcon } from 'lucide-react';
+import { useLanguage } from '@/i18n/context';
 
 const authSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -40,6 +41,7 @@ const AuthForm = () => {
   const [loading, setLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState('');
+  const { t } = useLanguage();
   
   const form = useForm<AuthFormValues>({
     resolver: zodResolver(authSchema),
@@ -67,7 +69,7 @@ const AuthForm = () => {
       
       if (result.success) {
         setEmailSent(true);
-        setVerificationMessage(result.message || 'Please check your email to verify your account.');
+        setVerificationMessage(result.message || t('checkEmail'));
         form.reset();
       } else {
         toast.error(result.message);
@@ -104,7 +106,7 @@ const AuthForm = () => {
     return (
       <Card className="w-full max-w-md mx-auto">
         <CardHeader>
-          <CardTitle>Check Your Email</CardTitle>
+          <CardTitle>{t('checkEmail')}</CardTitle>
           <CardDescription>
             {verificationMessage}
           </CardDescription>
@@ -119,7 +121,7 @@ const AuthForm = () => {
         </CardContent>
         <CardFooter className="flex justify-center">
           <Button variant="ghost" onClick={() => setEmailSent(false)}>
-            Back to login
+            {t('backToLogin')}
           </Button>
         </CardFooter>
       </Card>
@@ -130,7 +132,7 @@ const AuthForm = () => {
     return (
       <Card className="w-full max-w-md mx-auto">
         <CardHeader>
-          <CardTitle>Reset Password</CardTitle>
+          <CardTitle>{t('forgotPassword')}</CardTitle>
           <CardDescription>
             Enter your email and we'll send you a password reset link.
           </CardDescription>
@@ -143,23 +145,23 @@ const AuthForm = () => {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('email')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Email" {...field} />
+                      <Input placeholder={t('email')} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button onClick={onResetPassword} className="w-full" disabled={loading}>
-                {loading ? 'Sending...' : 'Send Reset Link'}
+                {loading ? 'Sending...' : t('sendResetLink')}
               </Button>
             </div>
           </Form>
         </CardContent>
         <CardFooter className="flex justify-center">
           <Button variant="ghost" onClick={() => setIsResettingPassword(false)}>
-            Back to login
+            {t('backToLogin')}
           </Button>
         </CardFooter>
       </Card>
@@ -171,8 +173,8 @@ const AuthForm = () => {
       <Tabs defaultValue="signin">
         <CardHeader>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Sign In</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="signin">{t('signIn')}</TabsTrigger>
+            <TabsTrigger value="signup">{t('signUp')}</TabsTrigger>
           </TabsList>
         </CardHeader>
         <CardContent>
@@ -184,9 +186,9 @@ const AuthForm = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t('email')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Email" {...field} />
+                        <Input placeholder={t('email')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -197,16 +199,16 @@ const AuthForm = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>{t('password')}</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Password" {...field} />
+                        <Input type="password" placeholder={t('password')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Signing in...' : 'Sign In'}
+                  {loading ? 'Signing in...' : t('signIn')}
                 </Button>
                 <div className="text-center">
                   <Button
@@ -214,7 +216,7 @@ const AuthForm = () => {
                     type="button"
                     onClick={() => setIsResettingPassword(true)}
                   >
-                    Forgot password?
+                    {t('forgotPassword')}
                   </Button>
                 </div>
               </form>
@@ -226,9 +228,9 @@ const AuthForm = () => {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>{t('email')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Email" {...field} />
+                        <Input placeholder={t('email')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -239,16 +241,16 @@ const AuthForm = () => {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Password</FormLabel>
+                      <FormLabel>{t('password')}</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="Password" {...field} />
+                        <Input type="password" placeholder={t('password')} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? 'Signing up...' : 'Sign Up'}
+                  {loading ? 'Signing up...' : t('signUp')}
                 </Button>
               </form>
             </TabsContent>
