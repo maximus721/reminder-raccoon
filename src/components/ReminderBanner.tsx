@@ -5,10 +5,12 @@ import { format } from 'date-fns';
 import { useFinance } from '@/contexts/FinanceContext';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useTheme } from '@/theme/ThemeContext';
 
 const ReminderBanner = () => {
   const { dueTodayBills, upcomingBills, urgentBills, pastDueBills, markBillAsPaid, isUrgentBill } = useFinance();
   const [dismissed, setDismissed] = React.useState(false);
+  const { resolvedTheme } = useTheme();
 
   // If no reminders or dismissed, don't show
   if ((dueTodayBills.length === 0 && upcomingBills.length === 0) || dismissed) {
@@ -29,17 +31,23 @@ const ReminderBanner = () => {
     return bill ? isUrgentBill(bill) : false;
   };
 
+  const darkModeHeader = resolvedTheme === 'dark' ? 'bg-[hsl(var(--banner-bg))] text-[hsl(var(--banner-text))]' : '';
+
   return (
     <div className="fixed bottom-4 left-4 right-4 md:left-auto md:right-4 md:bottom-4 md:max-w-md z-40 animate-slide-up">
       <div className="bg-card shadow-lg rounded-xl overflow-hidden border">
         <div className={cn(
           "px-4 py-3 flex justify-between items-center",
-          criticalBills.length > 0 ? "bg-red-600/10" : 
-          urgentBills.length > 0 ? "bg-red-500/10" : "bg-primary/10"
+          criticalBills.length > 0 ? resolvedTheme === 'dark' ? "bg-red-200 text-black" : "bg-red-600/10" : 
+          urgentBills.length > 0 ? resolvedTheme === 'dark' ? "bg-red-200 text-black" : "bg-red-500/10" : 
+          resolvedTheme === 'dark' ? darkModeHeader : "bg-primary/10"
         )}>
           <div className="flex items-center space-x-2">
-            <AlertCircle size={18} className={criticalBills.length > 0 ? "text-red-600" : 
-                                             urgentBills.length > 0 ? "text-red-500" : "text-primary"} />
+            <AlertCircle size={18} className={
+              resolvedTheme === 'dark' ? "text-black" :
+              criticalBills.length > 0 ? "text-red-600" : 
+              urgentBills.length > 0 ? "text-red-500" : "text-primary"
+            } />
             <h3 className="font-medium text-sm">
               {criticalBills.length > 0 ? "Critical Payment Reminders" : 
                urgentBills.length > 0 ? "Urgent Payment Reminders" : "Payment Reminders"}

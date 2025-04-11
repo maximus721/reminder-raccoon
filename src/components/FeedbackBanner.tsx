@@ -29,6 +29,7 @@ import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/use-mobile";
 import useLocalStorage from "@/hooks/useLocalStorage";
 import { useLanguage } from "@/i18n/context";
+import { useTheme } from "@/theme/ThemeContext";
 
 const feedbackFormSchema = z.object({
   name: z.string().min(2, {
@@ -51,6 +52,7 @@ const FeedbackBanner = () => {
   const [sessionPopupShown, setSessionPopupShown] = useLocalStorage('feedback-popup-shown', false);
   const isMobile = useIsMobile();
   const { t } = useLanguage();
+  const { resolvedTheme } = useTheme();
   
   const form = useForm<FeedbackFormValues>({
     resolver: zodResolver(feedbackFormSchema),
@@ -114,11 +116,13 @@ const FeedbackBanner = () => {
   return (
     <div className="fixed top-4 left-0 right-0 z-50 flex justify-center">
       <Alert className={`
-        max-w-3xl mx-4 shadow-lg border-primary/20 bg-[#D3E4FD] animate-slide-up
+        max-w-3xl mx-4 shadow-lg border-primary/20 
+        ${resolvedTheme === 'dark' ? 'bg-[hsl(var(--banner-bg))] text-[hsl(var(--banner-text))]' : 'bg-[#D3E4FD]'}
+        animate-slide-up
         ${isMobile ? 'flex flex-col p-3' : ''}
       `}>
         <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex justify-between items-center'}`}>
-          <AlertDescription className={`text-sm text-foreground ${isMobile ? 'text-center mb-2' : 'flex-1'}`}>
+          <AlertDescription className={`text-sm ${resolvedTheme === 'dark' ? 'text-[hsl(var(--banner-text))]' : 'text-foreground'} ${isMobile ? 'text-center mb-2' : 'flex-1'}`}>
             <span className="font-medium">{t('thankYou')}</span> {t('requestFeatures')}
           </AlertDescription>
           
