@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { MessageSquarePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -61,12 +60,11 @@ const FeedbackBanner = () => {
   });
   
   useEffect(() => {
-    // Show popup randomly during session (if not already shown this session)
     if (!sessionPopupShown) {
-      const randomDelay = Math.floor(Math.random() * (180000 - 60000) + 60000); // Between 1-3 minutes
+      const randomDelay = Math.floor(Math.random() * (180000 - 60000) + 60000);
       const timer = setTimeout(() => {
-        setDismissed(false); // Make sure it's visible
-        setSessionPopupShown(true); // Mark as shown for this session
+        setDismissed(false);
+        setSessionPopupShown(true);
       }, randomDelay);
       
       return () => clearTimeout(timer);
@@ -77,7 +75,6 @@ const FeedbackBanner = () => {
     setLoading(true);
     
     try {
-      // Using a simple mailto URL to avoid exposing the email address in the frontend code
       const response = await fetch("/api/send-feedback", {
         method: "POST",
         headers: {
@@ -96,7 +93,6 @@ const FeedbackBanner = () => {
     } catch (error) {
       console.error("Error sending feedback:", error);
       
-      // Fallback method using mailto
       const subject = encodeURIComponent("App Feedback");
       const body = encodeURIComponent(`Name: ${data.name}\nEmail: ${data.email}\n\nFeedback:\n${data.feedback}`);
       window.location.href = `mailto:robby72174@gmail.com?subject=${subject}&body=${body}`;
@@ -116,11 +112,11 @@ const FeedbackBanner = () => {
   return (
     <div className="fixed top-4 left-0 right-0 z-50 flex justify-center">
       <Alert className={`
-        max-w-3xl mx-4 shadow-lg border-primary/20 bg-primary/5 animate-slide-up
+        max-w-3xl mx-4 shadow-lg border-primary/20 bg-[#D3E4FD] animate-slide-up
         ${isMobile ? 'flex flex-col p-3' : ''}
       `}>
         <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex justify-between items-center'}`}>
-          <AlertDescription className={`text-sm ${isMobile ? 'text-center mb-2' : 'flex-1'}`}>
+          <AlertDescription className={`text-sm text-foreground ${isMobile ? 'text-center mb-2' : 'flex-1'}`}>
             <span className="font-medium">Thank you for helping test this app.</span> Feel free to request features and give feedback!
           </AlertDescription>
           
@@ -133,12 +129,6 @@ const FeedbackBanner = () => {
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px] max-w-[90vw] p-4">
-                <DialogHeader>
-                  <DialogTitle>Send Feedback</DialogTitle>
-                  <DialogDescription>
-                    Share your thoughts, ideas, or report issues to help improve the app.
-                  </DialogDescription>
-                </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <FormField

@@ -25,11 +25,11 @@ const GetStartedBanner = () => {
   return (
     <div className="fixed bottom-4 left-0 right-0 z-50 flex justify-center">
       <Alert className={`
-        max-w-3xl mx-4 shadow-lg border-primary/20 bg-primary/5 animate-slide-up
+        max-w-3xl mx-4 shadow-lg border-primary/20 bg-[#D3E4FD] animate-slide-up
         ${isMobile ? 'flex flex-col p-3' : ''}
       `}>
         <div className={`${isMobile ? 'flex flex-col gap-3' : 'flex justify-between items-center'}`}>
-          <AlertDescription className={`text-sm ${isMobile ? 'text-center mb-2' : 'flex-1'}`}>
+          <AlertDescription className={`text-sm text-foreground ${isMobile ? 'text-center mb-2' : 'flex-1'}`}>
             <span className="font-medium">🚀 New here?</span> Check out our quick start guide to supercharge your financial journey!
           </AlertDescription>
           
