@@ -33,11 +33,8 @@ const GetStartedBanner = () => {
           
           <div className={`${isMobile ? 'flex justify-center w-full' : 'flex items-center gap-2'}`}>
             <a 
-              href="#" 
-              onClick={(e) => {
-                e.preventDefault();
-                window.alert("The Getting Started guide is coming soon! This would link to your project documentation.");
-              }}
+              href="https://github.com/maximus721/reminder-raccoon/wiki"
+              target="_blank"
               rel="noopener noreferrer"
             >
               <Button size={isMobile ? "default" : "sm"} className={isMobile ? "w-full mb-1" : "h-8"}>
