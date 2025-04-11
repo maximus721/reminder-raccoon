@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { AlertDescription, Alert } from '@/components/ui/alert';
 import { X, BookOpen } from 'lucide-react';
@@ -33,7 +33,7 @@ const GetStartedBanner = () => {
           
           <div className={`${isMobile ? 'flex justify-center w-full' : 'flex items-center gap-2'}`}>
             <a 
-              href="https://docs.financetracker.app/guide"
+              href="https://github.com/yourusername/financetracker/wiki/Getting-Started"
               target="_blank"
               rel="noopener noreferrer"
             >
