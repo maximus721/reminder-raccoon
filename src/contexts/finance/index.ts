@@ -10,3 +10,6 @@ export type {
   SavingsGoal,
   SavingsGoalStatus
 } from './types';
+
+// Export all bill-related functionality
+export * from './bills';
