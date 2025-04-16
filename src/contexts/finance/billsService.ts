@@ -22,9 +22,9 @@ export const fetchBills = async (userId: string): Promise<Bill[]> => {
     category: bill.category,
     notes: bill.notes,
     interest: bill.interest,
-    snoozedUntil: (bill as any).snoozed_until || null,
-    originalDueDate: (bill as any).original_due_date || bill.due_date,
-    pastDueDays: (bill as any).past_due_days || 0
+    snoozedUntil: bill.snoozed_until || null,
+    originalDueDate: bill.original_due_date || bill.due_date,
+    pastDueDays: bill.past_due_days || 0
   }));
   
   return transformedBills;
@@ -68,9 +68,9 @@ export const addBill = async (user: User | null, bill: Omit<Bill, 'id'>): Promis
         category: data[0].category,
         notes: data[0].notes,
         interest: data[0].interest,
-        snoozedUntil: (data[0] as any).snoozed_until || null,
-        originalDueDate: (data[0] as any).original_due_date || data[0].due_date,
-        pastDueDays: (data[0] as any).past_due_days || 0
+        snoozedUntil: data[0].snoozed_until || null,
+        originalDueDate: data[0].original_due_date || data[0].due_date,
+        pastDueDays: data[0].past_due_days || 0
       };
       
       toast.success('Bill added successfully');

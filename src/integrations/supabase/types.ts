@@ -61,8 +61,11 @@ export type Database = {
           interest: number | null
           name: string
           notes: string | null
+          original_due_date: string | null
           paid: boolean
+          past_due_days: number | null
           recurring: string
+          snoozed_until: string | null
           user_id: string
         }
         Insert: {
@@ -74,8 +77,11 @@ export type Database = {
           interest?: number | null
           name: string
           notes?: string | null
+          original_due_date?: string | null
           paid?: boolean
+          past_due_days?: number | null
           recurring: string
+          snoozed_until?: string | null
           user_id: string
         }
         Update: {
@@ -87,8 +93,11 @@ export type Database = {
           interest?: number | null
           name?: string
           notes?: string | null
+          original_due_date?: string | null
           paid?: boolean
+          past_due_days?: number | null
           recurring?: string
+          snoozed_until?: string | null
           user_id?: string
         }
         Relationships: []

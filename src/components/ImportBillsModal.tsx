@@ -127,25 +127,40 @@ const ImportBillsModal: React.FC<ImportBillsModalProps> = ({ open, onOpenChange 
 
       for (const bill of bills) {
         if (validateBillData(bill)) {
-          await addBill({
-            name: bill.name,
-            amount: Number(bill.amount),
-            dueDate: bill.dueDate,
-            recurring: bill.recurring,
-            category: bill.category,
-            notes: bill.notes || '',
-            paid: bill.paid === true || bill.paid === 'true',
-            interest: bill.interest ? Number(bill.interest) : undefined
-          });
-          successCount++;
+          try {
+            // Make sure all required fields are present and correctly formatted
+            await addBill({
+              name: bill.name,
+              amount: Number(bill.amount),
+              dueDate: bill.dueDate,
+              recurring: bill.recurring,
+              category: bill.category,
+              notes: bill.notes || '',
+              paid: bill.paid === true || bill.paid === 'true',
+              interest: bill.interest ? Number(bill.interest) : null,
+              // Don't include the snooze fields in initial import
+              snoozedUntil: null,
+              originalDueDate: null,
+              pastDueDays: 0
+            });
+            successCount++;
+          } catch (error) {
+            console.error('Error adding bill:', error);
+            errorCount++;
+          }
         } else {
           errorCount++;
         }
       }
 
-      toast.success(`Imported ${successCount} bills successfully${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
-      onOpenChange(false);
+      if (successCount > 0) {
+        toast.success(`Imported ${successCount} bills successfully${errorCount > 0 ? ` (${errorCount} failed)` : ''}`);
+        onOpenChange(false);
+      } else {
+        toast.error(`Failed to import any bills. Please check your file format.`);
+      }
     } catch (error) {
+      console.error('Error importing bills:', error);
       toast.error('Error importing bills: ' + (error as Error).message);
     } finally {
       setUploading(false);
