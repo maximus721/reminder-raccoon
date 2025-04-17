@@ -1,9 +1,38 @@
+
 import React, { useState } from 'react';
 import { Upload, FileSpreadsheet, HelpCircle } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 import { isValid, parse, format } from 'date-fns';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/components/ui/alert";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 
 interface ImportBillsModalProps {
   open: boolean;
