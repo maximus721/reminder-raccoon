@@ -31,10 +31,10 @@ export const addBill = async (user: User | null, bill: Omit<Bill, 'id'>): Promis
   try {
     const dbBill = prepareDbBillFromBill(user.id, bill);
     
-    // Fix: Properly type the insert values to match Supabase's expectations
+    // Fix: Properly format the insert data as an array of one object
     const { data, error } = await supabase
       .from('bills')
-      .insert(dbBill)
+      .insert([dbBill])
       .select();
       
     if (error) throw error;
