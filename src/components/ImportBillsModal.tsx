@@ -1,31 +1,9 @@
-
 import React, { useState } from 'react';
 import { Upload, FileSpreadsheet, HelpCircle } from 'lucide-react';
 import { useFinance } from '@/contexts/FinanceContext';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
-
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-} from "@/components/ui/alert";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { isValid, parse, format } from 'date-fns';
 
 interface ImportBillsModalProps {
   open: boolean;
@@ -41,27 +19,62 @@ const ImportBillsModal: React.FC<ImportBillsModalProps> = ({ open, onOpenChange 
   const [file, setFile] = useState<File | null>(null);
   const [previewData, setPreviewData] = useState<any[]>([]);
 
+  const parseDateValue = (value: any): string | null => {
+    if (typeof value === 'number') {
+      const date = XLSX.SSF.parse_date_code(value);
+      if (date) {
+        return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
+      }
+    }
+
+    if (typeof value === 'string') {
+      const formats = [
+        'yyyy-MM-dd',
+        'MM/dd/yyyy',
+        'dd/MM/yyyy',
+        'MM-dd-yyyy',
+        'dd-MM-yyyy',
+        'yyyyMMdd'
+      ];
+
+      for (const dateFormat of formats) {
+        const parsedDate = parse(value, dateFormat, new Date());
+        if (isValid(parsedDate)) {
+          return format(parsedDate, 'yyyy-MM-dd');
+        }
+      }
+
+      const cleanedValue = value.replace(/[^\d-]/g, '');
+      if (cleanedValue.length === 8 || cleanedValue.length === 10) {
+        const year = cleanedValue.slice(0, 4);
+        const month = cleanedValue.slice(4, 6);
+        const day = cleanedValue.slice(6, 8);
+        const testDate = new Date(`${year}-${month}-${day}`);
+        if (isValid(testDate)) {
+          return format(testDate, 'yyyy-MM-dd');
+        }
+      }
+    }
+
+    return null;
+  };
+
   const validateBillData = (row: any) => {
-    // Check required fields
     for (const field of REQUIRED_COLUMNS) {
       if (!row[field] && field !== 'interest') {
         return false;
       }
     }
 
-    // Validate amount is a number
     if (isNaN(Number(row.amount))) {
       return false;
     }
 
-    // Validate dueDate is a valid date
-    try {
-      new Date(row.dueDate);
-    } catch (e) {
+    const parsedDate = parseDateValue(row.dueDate);
+    if (!parsedDate) {
       return false;
     }
 
-    // Validate recurring is valid
     const validRecurring = ['once', 'daily', 'weekly', 'monthly', 'yearly'];
     if (!validRecurring.includes(row.recurring)) {
       return false;
@@ -79,7 +92,7 @@ const ImportBillsModal: React.FC<ImportBillsModalProps> = ({ open, onOpenChange 
 
     try {
       const data = await readExcelFile(selectedFile);
-      setPreviewData(data.slice(0, 5)); // Preview first 5 rows
+      setPreviewData(data.slice(0, 5));
     } catch (error) {
       toast.error('Error reading file: ' + (error as Error).message);
     } finally {
@@ -128,17 +141,20 @@ const ImportBillsModal: React.FC<ImportBillsModalProps> = ({ open, onOpenChange 
       for (const bill of bills) {
         if (validateBillData(bill)) {
           try {
-            // Make sure all required fields are present and correctly formatted
+            const parsedDate = parseDateValue(bill.dueDate);
+            if (!parsedDate) {
+              throw new Error('Invalid date format');
+            }
+
             await addBill({
               name: bill.name,
               amount: Number(bill.amount),
-              dueDate: bill.dueDate,
+              dueDate: parsedDate,
               recurring: bill.recurring,
               category: bill.category,
               notes: bill.notes || '',
               paid: bill.paid === true || bill.paid === 'true',
               interest: bill.interest ? Number(bill.interest) : null,
-              // Don't include the snooze fields in initial import
               snoozedUntil: null,
               originalDueDate: null,
               pastDueDays: 0
