@@ -75,6 +75,19 @@ interface AddBillFormProps {
   editingBill?: Bill;
 }
 
+const CATEGORIES = [
+  'Housing',
+  'Utilities',
+  'Transportation',
+  'Food',
+  'Insurance',
+  'Health',
+  'Entertainment',
+  'Education',
+  'Debt',
+  'Other',
+];
+
 const AddBillForm: React.FC<AddBillFormProps> = ({ 
   open, 
   onOpenChange,
@@ -102,6 +115,10 @@ const AddBillForm: React.FC<AddBillFormProps> = ({
       interest: undefined,
     },
   });
+
+  // Watch the category field to show/hide interest rate
+  const selectedCategory = form.watch('category');
+  const showInterestField = selectedCategory.toLowerCase() === 'debt';
 
   // Reset form when editingBill changes or modal opens/closes
   React.useEffect(() => {
