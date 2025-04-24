@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { format } from 'date-fns';
 import { 
@@ -178,11 +179,11 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button variant="ghost" size="icon" className="h-8 w-8 relative z-20">
                   <MoreVertical size={16} />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="z-50">
                 {!bill.paid && (
                   <DropdownMenuItem onClick={() => markBillAsPaid(bill.id)}>
                     <Check size={14} className="mr-2" />
@@ -203,7 +204,7 @@ const BillCard: React.FC<BillCardProps> = ({ bill, onEdit }) => {
                       <AlarmClock size={14} className="mr-2" />
                       Snooze Bill
                     </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
+                    <DropdownMenuSubContent className="z-50">
                       <DropdownMenuItem onClick={() => handleSnooze(1)}>
                         1 Day
                       </DropdownMenuItem>

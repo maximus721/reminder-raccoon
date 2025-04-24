@@ -238,7 +238,7 @@ const AddBillForm: React.FC<AddBillFormProps> = ({
                           </Button>
                         </FormControl>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0 z-50" align="start">
                         <Calendar
                           mode="single"
                           selected={field.value}
@@ -265,7 +265,7 @@ const AddBillForm: React.FC<AddBillFormProps> = ({
                           <SelectValue placeholder="Select recurrence" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="z-50">
                         <SelectItem value="once">Once</SelectItem>
                         <SelectItem value="daily">Daily</SelectItem>
                         <SelectItem value="weekly">Weekly</SelectItem>
@@ -291,7 +291,7 @@ const AddBillForm: React.FC<AddBillFormProps> = ({
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="z-50">
                       {CATEGORIES.map((category) => (
                         <SelectItem key={category} value={category}>
                           {category}
@@ -316,7 +316,7 @@ const AddBillForm: React.FC<AddBillFormProps> = ({
                         <TooltipTrigger asChild>
                           <InfoIcon className="h-4 w-4 ml-1 inline-block text-muted-foreground" />
                         </TooltipTrigger>
-                        <TooltipContent>
+                        <TooltipContent className="z-50">
                           <p className="w-[200px] text-sm">
                             Annual interest rate for debt calculation (optional)
                           </p>
