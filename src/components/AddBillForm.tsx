@@ -75,19 +75,6 @@ interface AddBillFormProps {
   editingBill?: Bill;
 }
 
-const CATEGORIES = [
-  'Housing',
-  'Utilities',
-  'Transportation',
-  'Food',
-  'Insurance',
-  'Health',
-  'Entertainment',
-  'Education',
-  'Debt',
-  'Other',
-];
-
 const AddBillForm: React.FC<AddBillFormProps> = ({ 
   open, 
   onOpenChange,
@@ -104,7 +91,7 @@ const AddBillForm: React.FC<AddBillFormProps> = ({
       recurring: editingBill.recurring,
       category: editingBill.category,
       notes: editingBill.notes || '',
-      interest: editingBill.interest,
+      interest: editingBill.interest || undefined,
     } : {
       name: '',
       amount: 0,
@@ -116,9 +103,28 @@ const AddBillForm: React.FC<AddBillFormProps> = ({
     },
   });
 
-  // Watch the category field to show/hide interest rate
-  const selectedCategory = form.watch('category');
-  const showInterestField = selectedCategory.toLowerCase() === 'debt';
+  // Reset form when editingBill changes or modal opens/closes
+  React.useEffect(() => {
+    if (open) {
+      form.reset(editingBill ? {
+        name: editingBill.name,
+        amount: editingBill.amount,
+        dueDate: new Date(editingBill.dueDate),
+        recurring: editingBill.recurring,
+        category: editingBill.category,
+        notes: editingBill.notes || '',
+        interest: editingBill.interest || undefined,
+      } : {
+        name: '',
+        amount: 0,
+        dueDate: new Date(),
+        recurring: 'monthly',
+        category: 'Other',
+        notes: '',
+        interest: undefined,
+      });
+    }
+  }, [open, editingBill, form]);
 
   function onSubmit(values: FormValues) {
     const billData = {
