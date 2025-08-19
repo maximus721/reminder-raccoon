@@ -17,6 +17,7 @@ import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
+import DashboardV2 from "./pages/DashboardV2";
 import { useAuth } from "./contexts/AuthContext";
 import FeedbackBanner from "./components/FeedbackBanner";
 import GetStartedBanner from "./components/GetStartedBanner";
@@ -80,6 +81,14 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <PaymentGoals />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/dashboard/v2" 
+        element={
+          <ProtectedRoute>
+            <DashboardV2 />
           </ProtectedRoute>
         } 
       />

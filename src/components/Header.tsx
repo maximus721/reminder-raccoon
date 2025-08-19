@@ -29,6 +29,7 @@ const Header = () => {
 
   const navLinks = [
     { name: t('dashboard'), path: '/', icon: <Home className="h-5 w-5 mr-2" /> },
+    { name: 'LCARS Dashboard', path: '/dashboard/v2', icon: <Globe className="h-5 w-5 mr-2" /> },
     { name: t('bills'), path: '/bills', icon: <Receipt className="h-5 w-5 mr-2" /> },
     { name: t('accounts'), path: '/accounts', icon: <Wallet className="h-5 w-5 mr-2" /> },
     { name: t('calendar'), path: '/calendar', icon: <Calendar className="h-5 w-5 mr-2" /> },
