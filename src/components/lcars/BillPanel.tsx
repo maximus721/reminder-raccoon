@@ -26,7 +26,8 @@ interface BillPanelProps {
 export const BillPanel = ({ bill, onMarkPaid, onSnooze, onView }: BillPanelProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const daysRemaining = daysUntil(bill.dueDate);
-  const colorClass = lcarsDueClass(daysRemaining, bill.pastDueDays);
+  const baseColorClass = lcarsDueClass(daysRemaining, bill.pastDueDays);
+  const colorClass = bill.paid ? baseColorClass.replace('animate-pulse', '') : baseColorClass;
   const isOverdue = daysRemaining < 0;
   const isCritical = !bill.paid && bill.pastDueDays && bill.pastDueDays >= 30;
 
