@@ -28,7 +28,7 @@ export const BillPanel = ({ bill, onMarkPaid, onSnooze, onView }: BillPanelProps
   const daysRemaining = daysUntil(bill.dueDate);
   const colorClass = lcarsDueClass(daysRemaining, bill.pastDueDays);
   const isOverdue = daysRemaining < 0;
-  const isCritical = bill.pastDueDays && bill.pastDueDays >= 30;
+  const isCritical = !bill.paid && bill.pastDueDays && bill.pastDueDays >= 30;
 
   const handleMarkPaid = async () => {
     setIsProcessing(true);
